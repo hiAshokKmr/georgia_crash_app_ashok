@@ -3,9 +3,10 @@ import random
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import render, get_object_or_404
-from .models import CrashIncident, NearbyLocation, AdCampaign, Lead, AutomationRuleLog, GoogleAdsAccountConfig, GoogleAdsCampaignSync
+from .models import CrashIncident, NearbyLocation, AdCampaign, Lead, AutomationRuleLog, GoogleAdsAccountConfig, GoogleAdsCampaignSync, MetaAdsAccountConfig, MetaAdsCampaignSync
 from .ad_automation import optimize_campaign_budget, generate_ab_test_variations, dispatch_lead_notification
 from .google_ads_api import GoogleAdsAPIManager
+from .meta_ads_api import MetaAdsAPIManager
 
 @csrf_exempt
 def crash_webhook(request):
@@ -397,4 +398,81 @@ def google_ads_conversion_api(request, lead_id):
         return JsonResponse(res)
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+def meta_ads_dashboard_view(request):
+    manager = MetaAdsAPIManager()
+    config = manager.config
+    meta_campaigns = AdCampaign.objects.filter(platform='META').select_related('meta_sync')
+    insights_data = manager.fetch_insights()
+    
+    context = {
+        'config': config,
+        'meta_campaigns': meta_campaigns,
+        'insights_data': insights_data
+    }
+    return render(request, 'meta_ads_dashboard.html', context)
+
+@csrf_exempt
+def meta_ads_config_api(request):
+    manager = MetaAdsAPIManager()
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body) if request.body else request.POST
+            config = manager.update_config(
+                app_id=data.get('app_id'),
+                access_token=data.get('access_token'),
+                ad_account_id=data.get('ad_account_id'),
+                pixel_id=data.get('pixel_id'),
+                page_id=data.get('page_id'),
+                is_sandbox=data.get('is_sandbox', True)
+            )
+            return JsonResponse({
+                'status': 'success',
+                'message': 'Meta Marketing API configuration updated successfully!',
+                'ad_account_id': config.ad_account_id,
+                'app_id': config.app_id,
+                'pixel_id': config.pixel_id,
+                'is_sandbox': config.is_sandbox
+            })
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+    else:
+        return JsonResponse({
+            'ad_account_id': manager.config.ad_account_id,
+            'app_id': manager.config.app_id,
+            'pixel_id': manager.config.pixel_id,
+            'page_id': manager.config.page_id,
+            'is_sandbox': manager.config.is_sandbox
+        })
+
+def meta_ads_insights_api(request):
+    manager = MetaAdsAPIManager()
+    date_preset = request.GET.get('date_preset', 'last_30d')
+    res = manager.fetch_insights(date_preset=date_preset)
+    return JsonResponse(res)
+
+@csrf_exempt
+def meta_ads_deploy_api(request, campaign_id):
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Only POST allowed'}, status=405)
+    try:
+        camp = get_object_or_404(AdCampaign, id=campaign_id)
+        manager = MetaAdsAPIManager()
+        res = manager.deploy_to_meta_ads(camp)
+        return JsonResponse(res)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+@csrf_exempt
+def meta_ads_capi_api(request, lead_id):
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Only POST allowed'}, status=405)
+    try:
+        lead = get_object_or_404(Lead, id=lead_id)
+        manager = MetaAdsAPIManager()
+        res = manager.send_conversions_api_event(lead)
+        return JsonResponse(res)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
 

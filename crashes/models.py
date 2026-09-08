@@ -134,3 +134,30 @@ class GoogleAdsCampaignSync(models.Model):
     def __str__(self):
         return f"Google Ads Sync: Campaign {self.google_campaign_id} ({self.campaign.name})"
 
+class MetaAdsAccountConfig(models.Model):
+    app_id = models.CharField(max_length=255, default='987654321012345')
+    app_secret = models.CharField(max_length=255, blank=True, default='meta_app_secret_hash_ga_511')
+    access_token = models.CharField(max_length=500, default='EAABwz1234567890_MOCK_META_SYSTEM_USER_TOKEN')
+    ad_account_id = models.CharField(max_length=100, default='act_10203040506070')
+    pixel_id = models.CharField(max_length=100, default='1122334455667788')
+    page_id = models.CharField(max_length=100, default='georgia_emergency_towing_page_id')
+    is_sandbox = models.BooleanField(default=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Meta Ads Config (Account: {self.ad_account_id}) - Sandbox: {self.is_sandbox}"
+
+class MetaAdsCampaignSync(models.Model):
+    campaign = models.OneToOneField(AdCampaign, on_delete=models.CASCADE, related_name='meta_sync')
+    meta_campaign_id = models.CharField(max_length=100)
+    meta_adset_id = models.CharField(max_length=100)
+    meta_ad_id = models.CharField(max_length=100)
+    objective = models.CharField(max_length=100, default='OUTCOME_LEADS')
+    capi_last_event_id = models.CharField(max_length=255, blank=True, default='')
+    sync_status = models.CharField(max_length=50, default='SYNCED')
+    synced_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Meta Ads Sync: Campaign {self.meta_campaign_id} ({self.campaign.name})"
+
+

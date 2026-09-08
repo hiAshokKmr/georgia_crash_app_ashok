@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meta (Facebook/IG) Marketing API & CAPI Center</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --meta-blue: #0866FF;
+            --meta-dark: #1877F2;
+            --sidebar-width: 260px;
+        }
+        body { background-color: #f0f2f5; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        
+        .navbar-meta { background-color: white; border-bottom: 1px solid #e4e6eb; }
+        .meta-card { border: 1px solid #e4e6eb; border-radius: 10px; background: white; box-shadow: 0 1px 2px rgba(0,0,0,0.08); }
+        .json-preview { font-family: "Courier New", Courier, monospace; background: #0f172a; color: #38bdf8; border-radius: 8px; padding: 14px; font-size: 0.85rem; }
+        
+        .badge-meta-api { background: #e7f1ff; color: #0866FF; border: 1px solid #aacdff; font-weight: 600; }
+        
+        /* Instagram Feed Card */
+        .ig-feed-card { border: 1px solid #e4e6eb; border-radius: 12px; background: #fff; overflow: hidden; max-width: 380px; margin: 0 auto; }
+        .ig-header { padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f0f2f5; }
+        .ig-avatar { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); padding: 2px; }
+        .ig-avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 2px solid white; }
+        .ig-cta-bar { background: #0866FF; color: white; padding: 10px 14px; font-weight: 600; font-size: 0.9rem; display: flex; justify-content: space-between; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<!-- Top Navigation -->
+<nav class="navbar navbar-meta navbar-expand-lg px-4 py-3">
+    <div class="container-fluid">
+        <a class="navbar-brand d-flex align-items-center gap-2 fw-bold text-dark" href="/">
+            <i class="bi bi-facebook text-primary fs-3"></i>
+            <span>Meta Marketing API & CAPI Center</span>
+        </a>
+
+        <div class="d-flex align-items-center gap-3 ms-auto">
+            <span class="badge badge-meta-api px-3 py-2">
+                <i class="bi bi-shield-check me-1"></i> Graph API v19.0 · Account: {{ config.ad_account_id }}
+            </span>
+            <a href="/" class="btn btn-outline-dark btn-sm fw-bold">
+                <i class="bi bi-arrow-left me-1"></i> Back to Georgia Dashboard
+            </a>
+        </div>
+    </div>
+</nav>
+
+<div class="container-fluid py-4 px-4">
+    
+    <!-- Header Banner -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="fw-bold text-dark mb-1">Meta Marketing API v19.0 / v20.0 Control Console</h4>
+            <p class="text-muted small mb-0">Graph API Insights, AdSet Custom Geo-Radius Targeting, Conversions API (CAPI) Server-Side Events & Lead Forms</p>
+        </div>
+        <button class="btn btn-primary fw-bold" data-bs-toggle="modal" data-bs-target="#configModal">
+            <i class="bi bi-key-fill me-1"></i> Access Token & Pixel Config
+        </button>
+    </div>
+
+    <!-- Stats Bar -->
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-md-3">
+            <div class="meta-card p-3">
+                <small class="text-muted fw-bold d-block">AD ACCOUNT ID</small>
+                <h5 class="fw-bold text-dark my-1">{{ config.ad_account_id }}</h5>
+                <small class="text-primary"><i class="bi bi-check-circle-fill me-1"></i>Meta Business Manager Verified</small>
+            </div>
+        </div>
+        <div class="col-12 col-md-3">
+            <div class="meta-card p-3">
+                <small class="text-muted fw-bold d-block">META PIXEL ID (CAPI)</small>
+                <h5 class="fw-bold text-success my-1">{{ config.pixel_id }}</h5>
+                <small class="text-success"><i class="bi bi-activity me-1"></i>Server-Side Events Active</small>
+            </div>
+        </div>
+        <div class="col-12 col-md-3">
+            <div class="meta-card p-3">
+                <small class="text-muted fw-bold d-block">SYSTEM USER TOKEN</small>
+                <h5 class="fw-bold text-truncate text-secondary my-1" title="{{ config.access_token }}">{{ config.access_token|truncatechars:18 }}</h5>
+                <small class="text-muted"><i class="bi bi-key-fill me-1"></i>Never Expiring Admin Token</small>
+            </div>
+        </div>
+        <div class="col-12 col-md-3">
+            <div class="meta-card p-3">
+                <small class="text-muted fw-bold d-block">FACEBOOK PAGE ID</small>
+                <h5 class="fw-bold text-primary my-1">{{ config.page_id }}</h5>
+                <small class="text-muted"><i class="bi bi-flag-fill me-1"></i>Connected GA Towing Page</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        
+        <!-- LEFT COLUMN: GRAPH API INSIGHTS EXPLORER -->
+        <div class="col-12 col-lg-7">
+            <div class="meta-card p-4 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="fw-bold text-dark mb-0">
+                        <i class="bi bi-graph-up-arrow text-primary me-2"></i>Meta Graph API Insights Explorer (/act_{id}/insights)
+                    </h6>
+                    <span class="badge bg-primary">v19.0 REST API</span>
+                </div>
+
+                <div class="d-flex gap-2 mb-3">
+                    <select id="insightsDatePreset" class="form-select form-select-sm w-auto">
+                        <option value="last_30d">Last 30 Days</option>
+                        <option value="last_7d">Last 7 Days</option>
+                        <option value="today">Today</option>
+                    </select>
+                    <button class="btn btn-sm btn-primary fw-bold" onclick="refreshMetaInsights()">
+                        <i class="bi bi-arrow-repeat me-1"></i> Query Graph API Insights
+                    </button>
+                </div>
+
+                <div class="border rounded p-3 bg-light mb-3">
+                    <div class="row text-center">
+                        <div class="col-3">
+                            <small class="text-muted d-block">Total Spend</small>
+                            <strong class="h6 text-dark" id="statSpend">{{ insights_data.summary.total_spend }}</strong>
+                        </div>
+                        <div class="col-3">
+                            <small class="text-muted d-block">Impressions</small>
+                            <strong class="h6 text-primary" id="statImpressions">{{ insights_data.summary.total_impressions }}</strong>
+                        </div>
+                        <div class="col-3">
+                            <small class="text-muted d-block">Link Clicks</small>
+                            <strong class="h6 text-info" id="statClicks">{{ insights_data.summary.total_clicks }}</strong>
+                        </div>
+                        <div class="col-3">
+                            <small class="text-muted d-block">Lead Form Submits</small>
+                            <strong class="h6 text-success" id="statLeads">{{ insights_data.summary.total_leads }}</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <h6 class="fw-bold small text-muted mb-2">Graph API Payload Response (JSON):</h6>
+                <pre id="insightsJsonContainer" class="json-preview" style="max-height: 280px; overflow-y: auto;">{{ insights_data|json_script:"init-meta-insights" }}</pre>
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN: CAMPAIGN DEPLOYMENT & CONVERSIONS API -->
+        <div class="col-12 col-lg-5">
+            <!-- DEPLOY TO META ADS -->
+            <div class="meta-card p-4 mb-4">
+                <h6 class="fw-bold text-dark mb-3">
+                    <i class="bi bi-send-plus-fill text-primary me-2"></i>Deploy Campaign via Meta Graph API
+                </h6>
+                <p class="small text-muted mb-3">Mutates `/campaigns`, `/adsets` (with custom location radius), `/adcreatives`, and `/ads`</p>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">Select Local Campaign to Deploy</label>
+                    <select class="form-select form-select-sm" id="metaDeploySelect">
+                        {% for c in meta_campaigns %}
+                        <option value="{{ c.id }}">{{ c.name }} [{{ c.platform }}] - Budget: ${{ c.daily_budget }}/day</option>
+                        {% empty %}
+                        <option value="">No Meta campaigns found. Create one in dashboard!</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <button class="btn btn-primary fw-bold w-100 mb-3" onclick="deployToMetaAds()">
+                    <i class="bi bi-rocket-fill me-1"></i> Deploy to Meta Marketing API
+                </button>
+
+                <div id="metaDeployResult" class="p-3 bg-light rounded border" style="display: none; font-size: 0.85rem;"></div>
+            </div>
+
+            <!-- INSTAGRAM AD FEED PREVIEW CARD -->
+            <div class="meta-card p-4">
+                <h6 class="fw-bold text-dark mb-3">
+                    <i class="bi bi-instagram text-danger me-2"></i>Instagram Sponsored Post Preview
+                </h6>
+                
+                <div class="ig-feed-card">
+                    <div class="ig-header">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="ig-avatar"><img src="https://images.unsplash.com/photo-1580273916550-e323be2ae537?auto=format&fit=crop&w=150" alt="Avatar"></div>
+                            <div>
+                                <strong class="small d-block text-dark" style="line-height: 1;">georgia_emergency_towing</strong>
+                                <span class="text-muted extra-small">Sponsored</span>
+                            </div>
+                        </div>
+                        <i class="bi bi-three-dots text-dark"></i>
+                    </div>
+
+                    <img src="https://images.unsplash.com/photo-1580273916550-e323be2ae537?auto=format&fit=crop&w=800&q=80" class="w-100" style="height: 200px; object-fit: cover;" alt="Feed Creative">
+
+                    <div class="ig-cta-bar">
+                        <span>Get Instant Towing & Support</span>
+                        <i class="bi bi-chevron-right"></i>
+                    </div>
+
+                    <div class="p-3">
+                        <small class="fw-bold text-dark d-block mb-1">1,942 likes</small>
+                        <small class="text-secondary"><strong>georgia_emergency_towing</strong> Fast emergency roadside assistance, hospital dispatch & police reports near Georgia crash corridor.</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Config Modal -->
+<div class="modal fade" id="configModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="bi bi-facebook me-2"></i>Meta Marketing API Credentials</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="metaConfigForm">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Meta App ID</label>
+                        <input type="text" class="form-control" id="cfgAppId" value="{{ config.app_id }}" placeholder="987654321012345">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Ad Account ID (act_xxxxxxxx)</label>
+                        <input type="text" class="form-control" id="cfgAdAccountId" value="{{ config.ad_account_id }}" placeholder="act_10203040506070">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Meta Pixel ID (Conversions API)</label>
+                        <input type="text" class="form-control" id="cfgPixelId" value="{{ config.pixel_id }}" placeholder="1122334455667788">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Facebook Page ID</label>
+                        <input type="text" class="form-control" id="cfgPageId" value="{{ config.page_id }}" placeholder="page_id_string">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">System User Access Token</label>
+                        <textarea class="form-control" id="cfgAccessToken" rows="3" placeholder="EAABwz1234567890_ACCESS_TOKEN">{{ config.access_token }}</textarea>
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="cfgSandbox" {% if config.is_sandbox %}checked{% endif %}>
+                        <label class="form-check-label fw-bold">Use Sandbox / Development Mode</label>
+                    </div>
+                    <button type="button" class="btn btn-primary w-100 fw-bold" onclick="saveMetaConfig()">
+                        Save Meta API Credentials
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Load initial JSON
+    try {
+        const initData = JSON.parse(document.getElementById('init-meta-insights').textContent);
+        document.getElementById('insightsJsonContainer').textContent = JSON.stringify(initData, null, 2);
+    } catch(e) {}
+
+    function refreshMetaInsights() {
+        const datePreset = document.getElementById('insightsDatePreset').value;
+        const container = document.getElementById('insightsJsonContainer');
+        container.textContent = "Fetching insights from Meta Graph API v19.0 /act_" + "{{ config.ad_account_id }}" + "/insights...";
+
+        fetch(`/api/meta-ads/insights/?date_preset=${datePreset}`)
+        .then(res => res.json())
+        .then(data => {
+            container.textContent = JSON.stringify(data, null, 2);
+            document.getElementById('statSpend').innerText = data.summary.total_spend;
+            document.getElementById('statImpressions').innerText = data.summary.total_impressions;
+            document.getElementById('statClicks').innerText = data.summary.total_clicks;
+            document.getElementById('statLeads').innerText = data.summary.total_leads;
+        });
+    }
+
+    function deployToMetaAds() {
+        const campaignId = document.getElementById('metaDeploySelect').value;
+        if (!campaignId) return alert('Please select a campaign');
+
+        const container = document.getElementById('metaDeployResult');
+        container.style.display = 'block';
+        container.innerHTML = 'Creating campaign, adset (geo-radius targeting), adcreative, and ad on Meta Graph API...';
+
+        fetch(`/api/meta-ads/deploy/${campaignId}/`, { method: 'POST' })
+        .then(res => res.json())
+        .then(data => {
+            container.innerHTML = `
+                <div class="text-primary fw-bold mb-1"><i class="bi bi-check-circle-fill me-1"></i> ${data.message}</div>
+                <div><strong>Meta Campaign ID:</strong> ${data.meta_campaign_id}</div>
+                <div><strong>AdSet ID:</strong> ${data.meta_adset_id}</div>
+                <div><strong>Ad ID:</strong> ${data.meta_ad_id}</div>
+                <div><strong>Custom Location:</strong> ${data.targeting.custom_locations[0].radius} miles around ${data.targeting.custom_locations[0].latitude}, ${data.targeting.custom_locations[0].longitude}</div>
+            `;
+        })
+        .catch(err => {
+            container.innerHTML = `<span class="text-danger">Error: ${err}</span>`;
+        });
+    }
+
+    function saveMetaConfig() {
+        fetch('/api/meta-ads/config/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                app_id: document.getElementById('cfgAppId').value,
+                ad_account_id: document.getElementById('cfgAdAccountId').value,
+                pixel_id: document.getElementById('cfgPixelId').value,
+                page_id: document.getElementById('cfgPageId').value,
+                access_token: document.getElementById('cfgAccessToken').value,
+                is_sandbox: document.getElementById('cfgSandbox').checked
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            alert('🎉 Meta Marketing API Credentials Saved Successfully!');
+            window.location.reload();
+        });
+    }
+</script>
+</body>
+</html>

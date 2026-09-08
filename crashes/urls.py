@@ -14,4 +14,9 @@ urlpatterns = [
     path('api/google-ads/gaql/', views.google_ads_gaql_api, name='google_ads_gaql_api'),
     path('api/google-ads/deploy/<int:campaign_id>/', views.google_ads_deploy_api, name='google_ads_deploy_api'),
     path('api/google-ads/conversion/<int:lead_id>/', views.google_ads_conversion_api, name='google_ads_conversion_api'),
+    path('meta-ads/', views.meta_ads_dashboard_view, name='meta_ads_dashboard'),
+    path('api/meta-ads/config/', views.meta_ads_config_api, name='meta_ads_config_api'),
+    path('api/meta-ads/insights/', views.meta_ads_insights_api, name='meta_ads_insights_api'),
+    path('api/meta-ads/deploy/<int:campaign_id>/', views.meta_ads_deploy_api, name='meta_ads_deploy_api'),
+    path('api/meta-ads/capi/<int:lead_id>/', views.meta_ads_capi_api, name='meta_ads_capi_api'),
 ]
