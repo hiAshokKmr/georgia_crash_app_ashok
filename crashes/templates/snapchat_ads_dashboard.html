@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snapchat Ads API & CAPI Center</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --snap-yellow: #FFFC00;
+            --snap-dark: #0f172a;
+        }
+        body { background-color: #0f172a; color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        
+        .navbar-snap { background-color: #1e293b; border-bottom: 1px solid #334155; }
+        .snap-card { border: 1px solid #334155; border-radius: 12px; background: #1e293b; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        .json-preview { font-family: "Courier New", Courier, monospace; background: #020617; color: #FFFC00; border-radius: 8px; padding: 14px; font-size: 0.85rem; }
+        
+        .badge-snap-api { background: #fff9c4; color: #000; font-weight: 700; }
+
+        /* Snapchat Vertical Phone Mockup */
+        .snap-phone-mockup {
+            width: 320px;
+            height: 520px;
+            margin: 0 auto;
+            border: 10px solid #334155;
+            border-radius: 36px;
+            background: #000;
+            position: relative;
+            overflow: hidden;
+            background-size: cover;
+            background-position: center;
+        }
+        .snap-top-bar { position: absolute; top: 12px; left: 12px; right: 12px; display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.4); backdrop-filter: blur(8px); padding: 6px 12px; border-radius: 20px; }
+        .snap-bottom-cta { position: absolute; bottom: 16px; left: 16px; right: 16px; text-align: center; }
+        .snap-arrow { font-size: 1.4rem; animation: bounce 1.2s infinite; color: var(--snap-yellow); }
+        .snap-btn { background: var(--snap-yellow); color: #000; border: none; font-weight: 800; padding: 10px; width: 100%; border-radius: 24px; font-size: 0.85rem; text-transform: uppercase; }
+
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+    </style>
+</head>
+<body>
+
+<!-- Top Navigation -->
+<nav class="navbar navbar-snap navbar-expand-lg px-4 py-3">
+    <div class="container-fluid">
+        <a class="navbar-brand d-flex align-items-center gap-2 fw-bold text-white" href="/">
+            <i class="bi bi-snapchat text-warning fs-3"></i>
+            <span>Snapchat Ads API & CAPI Center</span>
+        </a>
+
+        <div class="d-flex align-items-center gap-3 ms-auto">
+            <span class="badge badge-snap-api px-3 py-2">
+                <i class="bi bi-shield-check me-1"></i> Ads API v1 · Account: {{ config.ad_account_id|truncatechars:18 }}
+            </span>
+            <a href="/" class="btn btn-outline-light btn-sm fw-bold">
+                <i class="bi bi-arrow-left me-1"></i> Back to Georgia Dashboard
+            </a>
+        </div>
+    </div>
+</nav>
+
+<div class="container-fluid py-4 px-4">
+    
+    <!-- Header Banner -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="fw-bold text-white mb-1">Snapchat Marketing Ads API Management Console</h4>
+            <p class="text-slate-400 small mb-0">Ad Squad Proximity Location Geofencing, 9:16 Vertical Video Ads, Conversions API (CAPI) & Reporting Stats</p>
+        </div>
+        <button class="btn btn-warning text-dark fw-bold" data-bs-toggle="modal" data-bs-target="#configModal">
+            <i class="bi bi-key-fill me-1"></i> Client Credentials & Pixel Config
+        </button>
+    </div>
+
+    <!-- Stats Bar -->
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-md-3">
+            <div class="snap-card p-3">
+                <small class="text-slate-400 fw-bold d-block">AD ACCOUNT ID</small>
+                <h5 class="fw-bold text-warning my-1 text-truncate">{{ config.ad_account_id }}</h5>
+                <small class="text-success"><i class="bi bi-check-circle-fill me-1"></i>Snap Business Verified</small>
+            </div>
+        </div>
+        <div class="col-12 col-md-3">
+            <div class="snap-card p-3">
+                <small class="text-slate-400 fw-bold d-block">SNAP PIXEL ID (CAPI)</small>
+                <h5 class="fw-bold text-success my-1 text-truncate">{{ config.pixel_id }}</h5>
+                <small class="text-success"><i class="bi bi-activity me-1"></i>Server-Side Conversions Active</small>
+            </div>
+        </div>
+        <div class="col-12 col-md-3">
+            <div class="snap-card p-3">
+                <small class="text-slate-400 fw-bold d-block">ORGANIZATION ID</small>
+                <h5 class="fw-bold text-info my-1 text-truncate">{{ config.organization_id }}</h5>
+                <small class="text-slate-400"><i class="bi bi-building me-1"></i>Georgia Emergency Corp</small>
+            </div>
+        </div>
+        <div class="col-12 col-md-3">
+            <div class="snap-card p-3">
+                <small class="text-slate-400 fw-bold d-block">BUY MODEL</small>
+                <h5 class="fw-bold text-white my-1">Real-Time Auction</h5>
+                <small class="text-warning"><i class="bi bi-lightning-charge-fill me-1"></i>Proximity Geofencing</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        
+        <!-- LEFT COLUMN: REPORTING STATS EXPLORER -->
+        <div class="col-12 col-lg-7">
+            <div class="snap-card p-4 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="fw-bold text-white mb-0">
+                        <i class="bi bi-bar-chart-fill text-warning me-2"></i>Snapchat Ads API Stats Explorer (/adaccounts/{id}/stats)
+                    </h6>
+                    <span class="badge bg-warning text-dark">Ads API v1</span>
+                </div>
+
+                <div class="d-flex gap-2 mb-3">
+                    <select id="statsDatePreset" class="form-select form-select-sm bg-dark text-white border-secondary w-auto">
+                        <option value="LAST_30_DAYS">Last 30 Days</option>
+                        <option value="LAST_7_DAYS">Last 7 Days</option>
+                        <option value="TODAY">Today</option>
+                    </select>
+                    <button class="btn btn-sm btn-warning text-dark fw-bold" onclick="refreshSnapStats()">
+                        <i class="bi bi-arrow-repeat me-1"></i> Query Snapchat Stats API
+                    </button>
+                </div>
+
+                <div class="border border-secondary rounded p-3 bg-dark mb-3">
+                    <div class="row text-center">
+                        <div class="col-3">
+                            <small class="text-slate-400 d-block">Total Spend</small>
+                            <strong class="h6 text-warning" id="statSpend">{{ stats_data.summary.total_spend }}</strong>
+                        </div>
+                        <div class="col-3">
+                            <small class="text-slate-400 d-block">Impressions</small>
+                            <strong class="h6 text-info" id="statImpressions">{{ stats_data.summary.total_impressions }}</strong>
+                        </div>
+                        <div class="col-3">
+                            <small class="text-slate-400 d-block">Swipes</small>
+                            <strong class="h6 text-success" id="statSwipes">{{ stats_data.summary.total_swipes }}</strong>
+                        </div>
+                        <div class="col-3">
+                            <small class="text-slate-400 d-block">Leads Captured</small>
+                            <strong class="h6 text-white" id="statLeads">{{ stats_data.summary.total_leads }}</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <h6 class="fw-bold small text-slate-400 mb-2">Snapchat Ads API Response (JSON):</h6>
+                <pre id="statsJsonContainer" class="json-preview" style="max-height: 280px; overflow-y: auto;">{{ stats_data|json_script:"init-snap-stats" }}</pre>
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN: CAMPAIGN DEPLOYMENT & VERTICAL SNAP PREVIEW -->
+        <div class="col-12 col-lg-5">
+            <!-- DEPLOY TO SNAPCHAT ADS -->
+            <div class="snap-card p-4 mb-4">
+                <h6 class="fw-bold text-white mb-3">
+                    <i class="bi bi-cloud-upload-fill text-warning me-2"></i>Deploy Campaign via Snapchat Ads API
+                </h6>
+                <p class="small text-slate-400 mb-3">Creates Campaign, Ad Squad (proximity targeting), Creative (9:16 Vertical Video/Image), and Ad</p>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">Select Local Campaign to Deploy</label>
+                    <select class="form-select form-select-sm bg-dark text-white border-secondary" id="snapDeploySelect">
+                        {% for c in snap_campaigns %}
+                        <option value="{{ c.id }}">{{ c.name }} [{{ c.platform }}] - Budget: ${{ c.daily_budget }}/day</option>
+                        {% empty %}
+                        <option value="">No Snapchat campaigns found. Create one in dashboard!</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <button class="btn btn-warning text-dark fw-bold w-100 mb-3" onclick="deployToSnapchatAds()">
+                    <i class="bi bi-rocket-takeoff-fill me-1"></i> Deploy to Snapchat Marketing API
+                </button>
+
+                <div id="snapDeployResult" class="p-3 bg-dark rounded border border-secondary" style="display: none; font-size: 0.85rem;"></div>
+            </div>
+
+            <!-- SNAPCHAT VERTICAL PHONE MOCKUP PREVIEW -->
+            <div class="snap-card p-4">
+                <h6 class="fw-bold text-white mb-3">
+                    <i class="bi bi-phone text-warning me-2"></i>Snapchat 9:16 Vertical Ad Creative Preview
+                </h6>
+                
+                <div class="snap-phone-mockup" style="background-image: url('https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=800&q=80');">
+                    <div class="snap-top-bar">
+                        <div class="rounded-circle bg-warning text-dark fw-bold d-flex align-items-center justify-content-center" style="width: 26px; height: 26px; font-size: 0.7rem;">GA</div>
+                        <strong class="small text-white">GA Emergency Towing</strong>
+                        <span class="badge bg-secondary extra-small ms-auto">Ad</span>
+                    </div>
+
+                    <div class="snap-bottom-cta">
+                        <div class="snap-arrow"><i class="bi bi-chevron-double-up"></i></div>
+                        <button class="snap-btn">SWIPE UP TO CALL HOTLINE</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Config Modal -->
+<div class="modal fade" id="configModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark text-white border-secondary">
+            <div class="modal-header border-secondary bg-warning text-dark">
+                <h5 class="modal-title"><i class="bi bi-snapchat me-2"></i>Snapchat Ads API Credentials</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="snapConfigForm">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Client ID</label>
+                        <input type="text" class="form-control bg-secondary text-white border-0" id="cfgClientId" value="{{ config.client_id }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Ad Account ID (UUID)</label>
+                        <input type="text" class="form-control bg-secondary text-white border-0" id="cfgAdAccountId" value="{{ config.ad_account_id }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Snapchat Pixel ID (CAPI)</label>
+                        <input type="text" class="form-control bg-secondary text-white border-0" id="cfgPixelId" value="{{ config.pixel_id }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Organization ID</label>
+                        <input type="text" class="form-control bg-secondary text-white border-0" id="cfgOrgId" value="{{ config.organization_id }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">OAuth Access Token</label>
+                        <textarea class="form-control bg-secondary text-white border-0" id="cfgAccessToken" rows="3">{{ config.access_token }}</textarea>
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="cfgSandbox" {% if config.is_sandbox %}checked{% endif %}>
+                        <label class="form-check-label fw-bold">Use Sandbox / Development Mode</label>
+                    </div>
+                    <button type="button" class="btn btn-warning text-dark w-100 fw-bold" onclick="saveSnapConfig()">
+                        Save Snapchat API Credentials
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Load initial JSON
+    try {
+        const initData = JSON.parse(document.getElementById('init-snap-stats').textContent);
+        document.getElementById('statsJsonContainer').textContent = JSON.stringify(initData, null, 2);
+    } catch(e) {}
+
+    function refreshSnapStats() {
+        const datePreset = document.getElementById('statsDatePreset').value;
+        const container = document.getElementById('statsJsonContainer');
+        container.textContent = "Fetching stats from Snapchat Ads API GET /adaccounts/" + "{{ config.ad_account_id }}" + "/stats...";
+
+        fetch(`/api/snapchat-ads/stats/?date_preset=${datePreset}`)
+        .then(res => res.json())
+        .then(data => {
+            container.textContent = JSON.stringify(data, null, 2);
+            document.getElementById('statSpend').innerText = data.summary.total_spend;
+            document.getElementById('statImpressions').innerText = data.summary.total_impressions;
+            document.getElementById('statSwipes').innerText = data.summary.total_swipes;
+            document.getElementById('statLeads').innerText = data.summary.total_leads;
+        });
+    }
+
+    function deployToSnapchatAds() {
+        const campaignId = document.getElementById('snapDeploySelect').value;
+        if (!campaignId) return alert('Please select a campaign');
+
+        const container = document.getElementById('snapDeployResult');
+        container.style.display = 'block';
+        container.innerHTML = 'Creating campaign, ad squad (geo proximity targeting), creative, and ad on Snapchat Ads API...';
+
+        fetch(`/api/snapchat-ads/deploy/${campaignId}/`, { method: 'POST' })
+        .then(res => res.json())
+        .then(data => {
+            container.innerHTML = `
+                <div class="text-warning fw-bold mb-1"><i class="bi bi-check-circle-fill me-1"></i> ${data.message}</div>
+                <div><strong>Snapchat Campaign ID:</strong> ${data.snap_campaign_id}</div>
+                <div><strong>Ad Squad ID:</strong> ${data.snap_adsquad_id}</div>
+                <div><strong>Ad ID:</strong> ${data.snap_ad_id}</div>
+                <div><strong>Proximity Geofence:</strong> ${data.geofence_targeting.radius} miles around ${data.geofence_targeting.latitude}, ${data.geofence_targeting.longitude}</div>
+            `;
+        })
+        .catch(err => {
+            container.innerHTML = `<span class="text-danger">Error: ${err}</span>`;
+        });
+    }
+
+    function saveSnapConfig() {
+        fetch('/api/snapchat-ads/config/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                client_id: document.getElementById('cfgClientId').value,
+                ad_account_id: document.getElementById('cfgAdAccountId').value,
+                pixel_id: document.getElementById('cfgPixelId').value,
+                organization_id: document.getElementById('cfgOrgId').value,
+                access_token: document.getElementById('cfgAccessToken').value,
+                is_sandbox: document.getElementById('cfgSandbox').checked
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            alert('🎉 Snapchat Ads API Credentials Saved Successfully!');
+            window.location.reload();
+        });
+    }
+</script>
+</body>
+</html>

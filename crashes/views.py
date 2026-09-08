@@ -3,10 +3,11 @@ import random
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import render, get_object_or_404
-from .models import CrashIncident, NearbyLocation, AdCampaign, Lead, AutomationRuleLog, GoogleAdsAccountConfig, GoogleAdsCampaignSync, MetaAdsAccountConfig, MetaAdsCampaignSync
+from .models import CrashIncident, NearbyLocation, AdCampaign, Lead, AutomationRuleLog, GoogleAdsAccountConfig, GoogleAdsCampaignSync, MetaAdsAccountConfig, MetaAdsCampaignSync, SnapchatAdsAccountConfig, SnapchatAdsCampaignSync
 from .ad_automation import optimize_campaign_budget, generate_ab_test_variations, dispatch_lead_notification
 from .google_ads_api import GoogleAdsAPIManager
 from .meta_ads_api import MetaAdsAPIManager
+from .snapchat_ads_api import SnapchatAdsAPIManager
 
 @csrf_exempt
 def crash_webhook(request):
@@ -474,5 +475,82 @@ def meta_ads_capi_api(request, lead_id):
         return JsonResponse(res)
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+def snapchat_ads_dashboard_view(request):
+    manager = SnapchatAdsAPIManager()
+    config = manager.config
+    snap_campaigns = AdCampaign.objects.filter(platform='SNAPCHAT').select_related('snap_sync')
+    stats_data = manager.fetch_stats()
+    
+    context = {
+        'config': config,
+        'snap_campaigns': snap_campaigns,
+        'stats_data': stats_data
+    }
+    return render(request, 'snapchat_ads_dashboard.html', context)
+
+@csrf_exempt
+def snapchat_ads_config_api(request):
+    manager = SnapchatAdsAPIManager()
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body) if request.body else request.POST
+            config = manager.update_config(
+                client_id=data.get('client_id'),
+                access_token=data.get('access_token'),
+                ad_account_id=data.get('ad_account_id'),
+                pixel_id=data.get('pixel_id'),
+                organization_id=data.get('organization_id'),
+                is_sandbox=data.get('is_sandbox', True)
+            )
+            return JsonResponse({
+                'status': 'success',
+                'message': 'Snapchat Ads API configuration updated successfully!',
+                'ad_account_id': config.ad_account_id,
+                'client_id': config.client_id,
+                'pixel_id': config.pixel_id,
+                'is_sandbox': config.is_sandbox
+            })
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+    else:
+        return JsonResponse({
+            'ad_account_id': manager.config.ad_account_id,
+            'client_id': manager.config.client_id,
+            'pixel_id': manager.config.pixel_id,
+            'organization_id': manager.config.organization_id,
+            'is_sandbox': manager.config.is_sandbox
+        })
+
+def snapchat_ads_stats_api(request):
+    manager = SnapchatAdsAPIManager()
+    date_preset = request.GET.get('date_preset', 'LAST_30_DAYS')
+    res = manager.fetch_stats(date_preset=date_preset)
+    return JsonResponse(res)
+
+@csrf_exempt
+def snapchat_ads_deploy_api(request, campaign_id):
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Only POST allowed'}, status=405)
+    try:
+        camp = get_object_or_404(AdCampaign, id=campaign_id)
+        manager = SnapchatAdsAPIManager()
+        res = manager.deploy_to_snapchat_ads(camp)
+        return JsonResponse(res)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+@csrf_exempt
+def snapchat_ads_capi_api(request, lead_id):
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Only POST allowed'}, status=405)
+    try:
+        lead = get_object_or_404(Lead, id=lead_id)
+        manager = SnapchatAdsAPIManager()
+        res = manager.send_conversions_api_event(lead)
+        return JsonResponse(res)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
 
 

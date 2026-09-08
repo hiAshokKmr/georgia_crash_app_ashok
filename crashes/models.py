@@ -160,4 +160,32 @@ class MetaAdsCampaignSync(models.Model):
     def __str__(self):
         return f"Meta Ads Sync: Campaign {self.meta_campaign_id} ({self.campaign.name})"
 
+class SnapchatAdsAccountConfig(models.Model):
+    client_id = models.CharField(max_length=255, default='snap_client_id_ga_511_crash')
+    client_secret = models.CharField(max_length=255, blank=True, default='snap_secret_key_12345')
+    access_token = models.CharField(max_length=500, default='SNAP_ACCESS_TOKEN_EAAB_511_MOCK')
+    refresh_token = models.CharField(max_length=500, blank=True, default='')
+    ad_account_id = models.CharField(max_length=100, default='e3b0c442-98fc-4c14-96fe-789a12345678')
+    pixel_id = models.CharField(max_length=100, default='98765432-1111-2222-3333-444455556666')
+    organization_id = models.CharField(max_length=100, default='org_ga_emergency_towing_inc')
+    is_sandbox = models.BooleanField(default=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Snapchat Ads Config (Account: {self.ad_account_id}) - Sandbox: {self.is_sandbox}"
+
+class SnapchatAdsCampaignSync(models.Model):
+    campaign = models.OneToOneField(AdCampaign, on_delete=models.CASCADE, related_name='snap_sync')
+    snap_campaign_id = models.CharField(max_length=100)
+    snap_adset_id = models.CharField(max_length=100)
+    snap_ad_id = models.CharField(max_length=100)
+    buy_model = models.CharField(max_length=100, default='AUCTION')
+    capi_last_event_id = models.CharField(max_length=255, blank=True, default='')
+    sync_status = models.CharField(max_length=50, default='SYNCED')
+    synced_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Snapchat Ads Sync: Campaign {self.snap_campaign_id} ({self.campaign.name})"
+
+
 
