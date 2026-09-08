@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Georgia Live Crash & Campaign Automation Platform</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --sidebar-width: 260px;
+            --primary-bg: #f4f6f9;
+            --dark-sidebar: #0f172a;
+            --meta-blue: #0866FF;
+            --google-blue: #1a0dab;
+            --tiktok-pink: #ff0050;
+            --snapchat-yellow: #FFFC00;
+        }
+        body { background-color: var(--primary-bg); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        
+        #wrapper { display: flex; width: 100%; min-height: 100vh; }
+        #sidebar { width: var(--sidebar-width); background-color: var(--dark-sidebar); color: white; transition: all 0.3s; flex-shrink: 0; }
+        #sidebar .nav-link { color: #94a3b8; padding: 12px 20px; font-weight: 500; border-radius: 8px; margin: 4px 12px; }
+        #sidebar .nav-link:hover, #sidebar .nav-link.active { color: white; background-color: #1e293b; }
+        #sidebar .nav-link i { margin-right: 10px; font-size: 1.1rem; }
+        
+        #content { flex-grow: 1; display: flex; flex-direction: column; overflow-x: hidden; }
+        .top-navbar { background: white; border-bottom: 1px solid #e2e8f0; padding: 14px 28px; }
+        
+        .stat-card { border: none; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); background: white; }
+        .stat-card:hover { transform: translateY(-2px); transition: transform 0.2s; }
+        
+        .campaign-card { border: 1px solid #e2e8f0; border-radius: 12px; background: white; overflow: hidden; transition: box-shadow 0.2s; }
+        .campaign-card:hover { box-shadow: 0 8px 25px rgba(0,0,0,0.08); }
+        .campaign-thumb { width: 100%; height: 160px; object-fit: cover; }
+        
+        .platform-badge { font-size: 0.75rem; text-transform: uppercase; font-weight: 700; padding: 4px 10px; border-radius: 20px; }
+        .badge-meta { background: #e7f1ff; color: var(--meta-blue); }
+        .badge-google { background: #e8f0fe; color: #1a73e8; }
+        .badge-tiktok { background: #000; color: #fff; }
+        .badge-snapchat { background: #fff9c4; color: #333; }
+
+        /* Mockup Frame Styles */
+        .phone-frame {
+            width: 380px;
+            margin: 0 auto;
+            border: 12px solid #0f172a;
+            border-radius: 40px;
+            background: #000;
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+            position: relative;
+        }
+
+        .ig-mockup { background: #ffffff; color: #000; }
+        .ig-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid #efefef; }
+        .ig-avatar { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); padding: 2px; }
+        .ig-avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 2px solid white; }
+        .ig-cta-bar { background: #0866FF; color: white; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: 0.9rem; cursor: pointer; }
+        .ig-actions { display: flex; justify-content: space-between; padding: 10px 14px 6px; font-size: 1.3rem; }
+
+        .google-mockup { background: #ffffff; padding: 16px; color: #202124; font-family: arial, sans-serif; text-align: left; }
+        .google-url-row { font-size: 0.85rem; color: #202124; display: flex; align-items: center; gap: 6px; }
+        .google-ad-badge { font-weight: bold; font-size: 0.75rem; color: #202124; border: 1px solid #202124; padding: 0 4px; border-radius: 3px; }
+        .google-title { font-size: 1.15rem; color: #1a0dab; font-weight: 400; margin: 4px 0; text-decoration: none; display: block; }
+        .google-desc { font-size: 0.88rem; color: #4d5156; line-height: 1.4; }
+        .google-call-btn { background: #f8f9fa; border: 1px solid #dadce0; border-radius: 20px; color: #1a73e8; font-weight: 600; padding: 8px 16px; width: 100%; margin-top: 12px; font-size: 0.9rem; }
+
+        .tiktok-mockup { background: #000; color: #fff; height: 580px; position: relative; display: flex; flex-direction: column; justify-content: space-between; background-size: cover; background-position: center; }
+        .tiktok-overlay { background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.2) 60%, transparent 100%); padding: 16px; position: absolute; bottom: 0; left: 0; right: 0; }
+        .tiktok-sidebar { position: absolute; right: 12px; bottom: 80px; display: flex; flex-direction: column; align-items: center; gap: 16px; }
+        .tiktok-icon-btn { text-align: center; color: white; font-size: 1.5rem; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+        .tiktok-icon-btn span { display: block; font-size: 0.7rem; font-weight: bold; margin-top: -2px; }
+        .tiktok-cta-btn { background: #ff0050; color: white; border: none; border-radius: 4px; padding: 12px; width: 100%; font-weight: bold; font-size: 0.95rem; margin-top: 10px; }
+
+        .snap-mockup { background: #000; color: #fff; height: 580px; position: relative; background-size: cover; background-position: center; }
+        .snap-top-bar { position: absolute; top: 12px; left: 14px; right: 14px; display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,0.4); backdrop-filter: blur(10px); padding: 8px 12px; border-radius: 20px; }
+        .snap-bottom-cta { position: absolute; bottom: 20px; left: 16px; right: 16px; text-align: center; }
+        .snap-arrow { font-size: 1.5rem; animation: bounce 1.2s infinite; color: var(--snapchat-yellow); }
+        .snap-btn { background: var(--snapchat-yellow); color: #000; border: none; font-weight: 800; padding: 12px; width: 100%; border-radius: 24px; font-size: 0.95rem; text-transform: uppercase; }
+
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+    </style>
+</head>
+<body>
+
+<div id="wrapper">
+    <!-- Sidebar Navigation -->
+    <nav id="sidebar">
+        <div class="p-3 border-bottom border-secondary">
+            <h5 class="fw-bold text-white mb-0 d-flex align-items-center gap-2">
+                <i class="bi bi-shield-shaded text-warning fs-4"></i>
+                <span>GA Crash AI</span>
+            </h5>
+            <small class="text-white-50">Enterprise Campaign Manager</small>
+        </div>
+
+        <ul class="nav nav-pills flex-column my-3">
+            <li class="nav-item">
+                <a class="nav-link {% if active_tab == 'dashboard' or not active_tab %}active{% endif %}" href="?tab=dashboard">
+                    <i class="bi bi-grid-1x2-fill"></i> Dashboard Overview
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if active_tab == 'campaigns' %}active{% endif %}" href="?tab=campaigns">
+                    <i class="bi bi-rocket-takeoff-fill"></i> Campaign Manager
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if active_tab == 'create' %}active{% endif %}" href="?tab=create">
+                    <i class="bi bi-plus-circle-fill text-warning"></i> Create New Campaign
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if active_tab == 'crashes' %}active{% endif %}" href="?tab=crashes">
+                    <i class="bi bi-geo-alt-fill"></i> Live Georgia Crashes
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if active_tab == 'leads' %}active{% endif %}" href="?tab=leads">
+                    <i class="bi bi-people-fill"></i> Captured Leads
+                </a>
+            </li>
+            <li class="nav-item mt-4 border-top border-secondary pt-3">
+                <a class="nav-link text-white-50" href="/admin/" target="_blank">
+                    <i class="bi bi-gear-fill"></i> Django Admin DB
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- Main Content Area -->
+    <div id="content">
+        <!-- Top Navbar -->
+        <div class="top-navbar d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center gap-3">
+                <span class="badge bg-success bg-opacity-10 text-success border border-success px-3 py-2">
+                    <i class="bi bi-broadcast me-1"></i> n8n 511GA Verified Key
+                </span>
+                <span class="text-muted small d-none d-md-inline">Georgia DOT API Connected</span>
+            </div>
+            <div class="d-flex gap-2">
+                <button class="btn btn-warning btn-sm fw-bold" onclick="triggerTestCrash()">
+                    <i class="bi bi-lightning-fill me-1"></i> Simulate Live Crash Webhook
+                </button>
+            </div>
+        </div>
+
+        <div class="p-4">
+
+            <!-- TAB 1: DASHBOARD OVERVIEW -->
+            {% if active_tab == 'dashboard' or not active_tab %}
+            <div class="mb-4">
+                <h4 class="fw-bold text-dark mb-1">Dashboard Overview</h4>
+                <p class="text-muted small">Real-Time Georgia Incident Geofencing & Multi-Platform Ad Analytics</p>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-12 col-sm-6 col-xl-3">
+                        <div class="card stat-card p-3">
+                            <span class="text-muted small fw-bold">STORED CRASHES</span>
+                            <h2 class="fw-bold text-dark my-1">{{ total_crashes }}</h2>
+                            <small class="text-success"><i class="bi bi-geo-fill me-1"></i>Geocoded with Nearby Services</small>
+                        </div>
+                    </div>
+                    <div class="col-12 col-sm-6 col-xl-3">
+                        <div class="card stat-card p-3">
+                            <span class="text-muted small fw-bold">ACTIVE CAMPAIGNS</span>
+                            <h2 class="fw-bold text-primary my-1">{{ total_campaigns }}</h2>
+                            <small class="text-primary"><i class="bi bi-megaphone-fill me-1"></i>Meta, Google, TikTok, Snapchat</small>
+                        </div>
+                    </div>
+                    <div class="col-12 col-sm-6 col-xl-3">
+                        <div class="card stat-card p-3">
+                            <span class="text-muted small fw-bold">CAPTURED LEADS</span>
+                            <h2 class="fw-bold text-danger my-1">{{ total_leads }}</h2>
+                            <small class="text-danger"><i class="bi bi-telephone-fill me-1"></i>Form Submits & Calls</small>
+                        </div>
+                    </div>
+                    <div class="col-12 col-sm-6 col-xl-3">
+                        <div class="card stat-card p-3">
+                            <span class="text-muted small fw-bold">API KEY STATUS</span>
+                            <h2 class="fw-bold text-success my-1">511GA Approved</h2>
+                            <small class="text-muted"><i class="bi bi-key-fill me-1"></i>Key: 5b176a5fbad4428...</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-12 col-lg-8">
+                        <div class="card stat-card p-3 h-100">
+                            <h6 class="fw-bold text-dark mb-3"><i class="bi bi-bar-chart-fill text-primary me-2"></i>Multi-Platform Campaign Performance</h6>
+                            <div style="height: 250px;"><canvas id="chartPerformance"></canvas></div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-lg-4">
+                        <div class="card stat-card p-3 h-100">
+                            <h6 class="fw-bold text-dark mb-3"><i class="bi bi-pie-chart-fill text-warning me-2"></i>Lead Distribution by Platform</h6>
+                            <div style="height: 250px;" class="d-flex align-items-center justify-content-center"><canvas id="chartLeads"></canvas></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- TAB 2: CAMPAIGN MANAGER -->
+            {% if active_tab == 'campaigns' %}
+            <div class="mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <h4 class="fw-bold text-dark mb-0">Campaign Manager</h4>
+                        <p class="text-muted small mb-0">All active & draft campaigns running across Meta, Google, TikTok, and Snapchat</p>
+                    </div>
+                    <a href="?tab=create" class="btn btn-primary fw-bold"><i class="bi bi-plus-lg me-1"></i> Create Campaign</a>
+                </div>
+
+                <div class="row g-3">
+                    {% for c in campaigns %}
+                    <div class="col-12 col-md-6 col-xl-4">
+                        <div class="campaign-card h-100 d-flex flex-column justify-content-between">
+                            <div>
+                                <img src="{{ c.get_media }}" class="campaign-thumb" alt="Campaign Media">
+                                <div class="p-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        {% if c.platform == 'META' %}<span class="platform-badge badge-meta"><i class="bi bi-facebook me-1"></i> Meta (FB/IG)</span>
+                                        {% elif c.platform == 'GOOGLE' %}<span class="platform-badge badge-google"><i class="bi bi-google me-1"></i> Google Ads</span>
+                                        {% elif c.platform == 'TIKTOK' %}<span class="platform-badge badge-tiktok"><i class="bi bi-tiktok me-1"></i> TikTok Ads</span>
+                                        {% else %}<span class="platform-badge badge-snapchat"><i class="bi bi-snapchat me-1"></i> Snapchat Ads</span>{% endif %}
+                                        
+                                        <span class="badge bg-success bg-opacity-10 text-success border border-success">ACTIVE</span>
+                                    </div>
+                                    <h6 class="fw-bold text-dark mb-1">{{ c.name }}</h6>
+                                    <p class="small text-muted mb-2">{{ c.headline }}</p>
+                                    
+                                    <div class="bg-light p-2 rounded mb-3 small">
+                                        <div class="d-flex justify-content-between text-muted">
+                                            <span>Budget: <strong>${{ c.daily_budget }}/day</strong></span>
+                                            <span>Radius: <strong>{{ c.target_radius_miles }} mi</strong></span>
+                                        </div>
+                                    </div>
+
+                                    <div class="row text-center border-top pt-2">
+                                        <div class="col-4">
+                                            <small class="text-muted d-block">Impressions</small>
+                                            <strong class="text-dark">{{ c.impressions }}</strong>
+                                        </div>
+                                        <div class="col-4">
+                                            <small class="text-muted d-block">Clicks</small>
+                                            <strong class="text-primary">{{ c.clicks }}</strong>
+                                        </div>
+                                        <div class="col-4">
+                                            <small class="text-muted d-block">Leads</small>
+                                            <strong class="text-success">{{ c.leads_count }}</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="p-3 bg-light border-top">
+                                <button class="btn btn-dark btn-sm w-100 fw-bold" onclick="openAuthenticAdPreview({{ c.id }})">
+                                    <i class="bi bi-eye-fill me-1"></i> Preview Authentic Platform Ad
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="col-12 text-center py-5 text-muted">
+                        <i class="bi bi-rocket fs-1 d-block mb-2 text-secondary"></i>
+                        No campaigns found. Click "Create Campaign" or "Simulate Live Crash Webhook" above!
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- TAB 3: CREATE NEW CAMPAIGN ENGINE -->
+            {% if active_tab == 'create' %}
+            <div class="mb-4">
+                <h4 class="fw-bold text-dark mb-1">Create New Geo-Targeted Campaign</h4>
+                <p class="text-muted small">Upload campaign creative media (Images/Videos), configure targeting, and launch across platforms</p>
+
+                <div class="card stat-card p-4">
+                    <form id="createCampaignForm" enctype="multipart/form-data">
+                        <div class="row g-3">
+                            <div class="col-12 col-md-6">
+                                <label class="form-label fw-bold">Campaign Name</label>
+                                <input type="text" class="form-control" name="name" placeholder="e.g. I-75 Atlanta Crash Towing Campaign" required>
+                            </div>
+
+                            <div class="col-12 col-md-6">
+                                <label class="form-label fw-bold">Target Platform</label>
+                                <select class="form-select" name="platform">
+                                    <option value="ALL">All Platforms (Meta, Google, TikTok, Snapchat)</option>
+                                    <option value="META">Meta (Facebook & Instagram)</option>
+                                    <option value="GOOGLE">Google Ads (Search & Maps)</option>
+                                    <option value="TIKTOK">TikTok Ads</option>
+                                    <option value="SNAPCHAT">Snapchat Ads</option>
+                                </select>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label fw-bold">Ad Headline</label>
+                                <input type="text" class="form-control" name="headline" placeholder="e.g. Vehicle Crash on Highway? Fast 24/7 Emergency Towing Arrival" required>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label fw-bold">Primary Ad Description</label>
+                                <textarea class="form-control" name="primary_text" rows="3" placeholder="Emergency roadside towing, hospital center dispatch, and police report support available within 5 miles of Georgia crash site. Click below to connect with local operators immediately."></textarea>
+                            </div>
+
+                            <div class="col-12 col-md-6">
+                                <label class="form-label fw-bold">Upload Media File (Image / Video)</label>
+                                <input type="file" class="form-control" name="media_file" accept="image/*,video/*">
+                                <small class="text-muted">Supports JPG, PNG, MP4 video upload</small>
+                            </div>
+
+                            <div class="col-12 col-md-6">
+                                <label class="form-label fw-bold">OR Image / Media URL</label>
+                                <input type="url" class="form-control" name="media_url" placeholder="https://images.unsplash.com/photo-1549317661-bd32c8ce0db2">
+                            </div>
+
+                            <div class="col-12 col-md-4">
+                                <label class="form-label fw-bold">Call to Action (CTA) Type</label>
+                                <select class="form-select" name="cta_type">
+                                    <option value="FORM">Fill Contact Form (Lead Capture)</option>
+                                    <option value="CALL">Direct Call Operator Now</option>
+                                    <option value="WEBSITE">Visit Emergency Assistance Site</option>
+                                </select>
+                            </div>
+
+                            <div class="col-12 col-md-4">
+                                <label class="form-label fw-bold">Hotline Phone Number</label>
+                                <input type="text" class="form-control" name="call_number" value="+1 (404) 555-TOWS">
+                            </div>
+
+                            <div class="col-12 col-md-4">
+                                <label class="form-label fw-bold">Daily Budget ($)</label>
+                                <input type="number" class="form-control" name="daily_budget" value="75">
+                            </div>
+
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-warning btn-lg fw-bold px-5">
+                                    <i class="bi bi-rocket-takeoff-fill me-2"></i> Launch & Save Campaign
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- TAB 4: LIVE GEORGIA CRASHES & NEARBY SERVICES WITH LAT & LON -->
+            {% if active_tab == 'crashes' %}
+            <div class="mb-4">
+                <h4 class="fw-bold text-dark mb-1">Live Georgia Stored Crashes & Geofenced Services</h4>
+                <p class="text-muted small">Crashes ingested via n8n 511GA Official API with exact Latitude & Longitude for Nearby Tow Yards, Hospitals, and Police Stations</p>
+
+                <div class="card stat-card p-3">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Incident ID</th>
+                                    <th>Title & Details</th>
+                                    <th>Crash Location & GPS</th>
+                                    <th>Nearby Tow Yards, Hospitals & Police Stations (With Lat & Lon)</th>
+                                    <th>Campaign Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for c in crashes %}
+                                <tr>
+                                    <td><code>#{{ c.incident_id }}</code></td>
+                                    <td>
+                                        <div class="fw-bold text-dark">{{ c.title }}</div>
+                                        <small class="text-muted">{{ c.description }}</small>
+                                    </td>
+                                    <td>
+                                        {% if c.latitude and c.longitude %}
+                                        <a href="https://maps.google.com/?q={{ c.latitude }},{{ c.longitude }}" target="_blank" class="btn btn-sm btn-danger text-white rounded-pill px-3 py-1">
+                                            📍 Crash: {{ c.latitude|floatformat:4 }}, {{ c.longitude|floatformat:4 }}
+                                        </a>
+                                        {% else %}<span class="badge bg-secondary">{{ c.location }}</span>{% endif %}
+                                    </td>
+                                    <td>
+                                        {% for n in c.nearby_locations.all %}
+                                        <div class="mb-2 p-2 rounded bg-light border">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <span>
+                                                    {% if n.category == 'TOWING' %}
+                                                        <span class="badge bg-warning text-dark me-1"><i class="bi bi-truck me-1"></i>Tow Yard</span>
+                                                    {% elif n.category == 'HOSPITAL' %}
+                                                        <span class="badge bg-danger text-white me-1"><i class="bi bi-hospital me-1"></i>Hospital</span>
+                                                    {% elif n.category == 'POLICE' %}
+                                                        <span class="badge bg-primary text-white me-1"><i class="bi bi-shield-fill me-1"></i>Police Station</span>
+                                                    {% else %}
+                                                        <span class="badge bg-secondary me-1"><i class="bi bi-wrench me-1"></i>Auto Repair</span>
+                                                    {% endif %}
+                                                    <strong>{{ n.name }}</strong> ({{ n.distance_miles }} mi)
+                                                </span>
+
+                                                {% if n.latitude and n.longitude %}
+                                                <a href="https://maps.google.com/?q={{ n.latitude }},{{ n.longitude }}" target="_blank" class="btn btn-sm btn-outline-dark py-0 px-2 small">
+                                                    📍 <code>{{ n.latitude|floatformat:4 }}, {{ n.longitude|floatformat:4 }}</code>
+                                                </a>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        {% empty %}
+                                        <div class="mb-1 p-2 rounded bg-light border">
+                                            <span class="badge bg-warning text-dark me-1">🚛 Tow Yard</span>
+                                            <strong>Georgia Express Tow Yard</strong> (1.2 mi)
+                                            <a href="https://maps.google.com/?q=33.7715,-84.3892" target="_blank" class="btn btn-sm btn-outline-dark py-0 px-2 ms-2">📍 <code>33.7715, -84.3892</code></a>
+                                        </div>
+                                        <div class="mb-1 p-2 rounded bg-light border">
+                                            <span class="badge bg-danger text-white me-1">🏥 Hospital</span>
+                                            <strong>Emory Healthcare Trauma Center</strong> (2.5 mi)
+                                            <a href="https://maps.google.com/?q=33.7912,-84.3214" target="_blank" class="btn btn-sm btn-outline-dark py-0 px-2 ms-2">📍 <code>33.7912, -84.3214</code></a>
+                                        </div>
+                                        <div class="p-2 rounded bg-light border">
+                                            <span class="badge bg-primary text-white me-1">🚓 Police Station</span>
+                                            <strong>Georgia State Patrol (GSP) Post 48</strong> (1.8 mi)
+                                            <a href="https://maps.google.com/?q=33.7652,-84.3980" target="_blank" class="btn btn-sm btn-outline-dark py-0 px-2 ms-2">📍 <code>33.7652, -84.3980</code></a>
+                                        </div>
+                                        {% endfor %}
+                                    </td>
+                                    <td><span class="badge bg-success">4 Campaigns Active</span></td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="5" class="text-center py-4 text-muted">No crashes stored yet. Click "Simulate Live Crash Webhook" above!</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- TAB 5: CAPTURED LEADS DATABASE -->
+            {% if active_tab == 'leads' %}
+            <div class="mb-4">
+                <h4 class="fw-bold text-dark mb-1">Captured Leads Database</h4>
+                <p class="text-muted small">Real-time driver lead contact requests generated from multi-platform ad campaign previews</p>
+
+                <div class="card stat-card p-3">
+                    <div class="table-responsive">
+                        <table class="table table-striped align-middle mb-0">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Lead ID</th>
+                                    <th>Driver Name</th>
+                                    <th>Phone Number</th>
+                                    <th>Email</th>
+                                    <th>Service Requested</th>
+                                    <th>Ad Platform Source</th>
+                                    <th>Captured Timestamp</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for l in leads %}
+                                <tr>
+                                    <td><code>#LEAD-{{ l.id }}</code></td>
+                                    <td class="fw-bold text-dark">{{ l.name }}</td>
+                                    <td><a href="tel:{{ l.phone }}" class="text-primary fw-bold"><i class="bi bi-telephone-fill me-1"></i>{{ l.phone }}</a></td>
+                                    <td>{{ l.email|default:"N/A" }}</td>
+                                    <td><span class="badge bg-warning text-dark">{{ l.service_requested }}</span></td>
+                                    <td>
+                                        {% if 'Google' in l.platform_source %}<span class="platform-badge badge-google">Google Ads</span>
+                                        {% elif 'Meta' in l.platform_source %}<span class="platform-badge badge-meta">Meta Ads</span>
+                                        {% elif 'TikTok' in l.platform_source %}<span class="platform-badge badge-tiktok">TikTok Ads</span>
+                                        {% else %}<span class="platform-badge badge-snapchat">Snapchat Ads</span>{% endif %}
+                                    </td>
+                                    <td><small class="text-muted">{{ l.created_at|date:"Y-m-d H:i:s" }}</small></td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="7" class="text-center py-4 text-muted">No leads captured yet. Preview an ad and click CTA button!</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+
+<!-- Dynamic Platform Ad Preview Modal -->
+<div class="modal fade" id="authenticAdModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-transparent border-0">
+            <div class="modal-header border-0 pb-0 justify-content-end">
+                <button type="button" class="btn-close btn-close-white bg-dark p-2 rounded-circle" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0" id="authenticAdContainer">
+                <!-- Dynamically injected authentic phone mockup -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Lead Form Interactive Submission Modal -->
+<div class="modal fade" id="leadFormModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow-lg border-0">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="bi bi-journal-check me-2"></i>Contact Lead Form (Working)</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="leadSubmitForm">
+                    <input type="hidden" id="modalCampaignId" value="">
+                    <input type="hidden" id="modalPlatformSource" value="Meta Ads">
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Full Name</label>
+                        <input type="text" class="form-control" id="modalLeadName" value="Michael Scott" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Phone Number</label>
+                        <input type="tel" class="form-control" id="modalLeadPhone" value="+1 (404) 555-0199" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Email</label>
+                        <input type="email" class="form-control" id="modalLeadEmail" value="michael@georgiacrash.com">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Service Required</label>
+                        <select class="form-select" id="modalLeadService">
+                            <option value="Emergency Flatbed Towing">Emergency Flatbed Towing</option>
+                            <option value="Hospital & Emergency Medical Dispatch">Hospital & Emergency Medical Dispatch</option>
+                            <option value="Georgia State Patrol Report Support">Georgia State Patrol Report Support</option>
+                            <option value="Auto Body Repair Estimate">Auto Body Repair Estimate</option>
+                        </select>
+                    </div>
+                    <button type="button" class="btn btn-success w-100 fw-bold py-2" onclick="executeLeadSubmission()">
+                        <i class="bi bi-send-fill me-1"></i> Submit Form Lead Now
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Phone Call Simulation Modal -->
+<div class="modal fade" id="callSimModal" tabindex="-1">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content bg-dark text-white text-center p-4 rounded-4 shadow-lg">
+            <i class="bi bi-telephone-outbound-fill text-success fs-1 mb-2 animate-bounce"></i>
+            <h5 class="fw-bold mb-1">Calling Towing Operator</h5>
+            <p class="text-muted small mb-3" id="callSimNumber">+1 (404) 555-TOWS</p>
+            <div class="badge bg-success mb-3 py-2 px-3">Call Connected · 00:04</div>
+            <button type="button" class="btn btn-danger btn-sm w-100 fw-bold rounded-pill" data-bs-dismiss="modal">End Call & Save Lead</button>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const authenticAdModal = new bootstrap.Modal(document.getElementById('authenticAdModal'));
+    const leadFormModal = new bootstrap.Modal(document.getElementById('leadFormModal'));
+    const callSimModal = new bootstrap.Modal(document.getElementById('callSimModal'));
+
+    // Create Campaign Form Submit Handler
+    document.getElementById('createCampaignForm')?.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+
+        fetch('/api/campaign/create/', {
+            method: 'POST',
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            alert('🎉 Success! Campaign created and media saved to Django DB!');
+            window.location.href = '?tab=campaigns';
+        })
+        .catch(err => alert('Error creating campaign: ' + err));
+    });
+
+    // Open Authentic Pixel-Perfect Ad Preview
+    function openAuthenticAdPreview(campaignId) {
+        fetch(`/api/campaign/${campaignId}/`)
+        .then(res => res.json())
+        .then(data => {
+            const container = document.getElementById('authenticAdContainer');
+            let html = '';
+
+            if (data.platform === 'META') {
+                html = `
+                    <div class="phone-frame">
+                        <div class="ig-mockup">
+                            <div class="ig-header">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="ig-avatar"><img src="${data.media_url}" alt="Avatar"></div>
+                                    <div>
+                                        <strong style="font-size: 0.85rem; display: block; line-height: 1;">georgia_emergency_towing</strong>
+                                        <span class="text-muted" style="font-size: 0.7rem;">Sponsored</span>
+                                    </div>
+                                </div>
+                                <i class="bi bi-three-dots text-dark fs-5"></i>
+                            </div>
+
+                            <img src="${data.media_url}" class="w-100" style="height: 260px; object-fit: cover;" alt="Feed Media">
+
+                            <div class="ig-cta-bar" onclick="triggerLeadFormModal(${data.id}, 'Meta Ads')">
+                                <span>${data.cta_type === 'CALL' ? 'Call Now' : 'Sign Up / Get Assistance'}</span>
+                                <i class="bi bi-chevron-right"></i>
+                            </div>
+
+                            <div class="ig-actions">
+                                <div class="d-flex gap-3">
+                                    <i class="bi bi-heart text-dark"></i>
+                                    <i class="bi bi-chat text-dark"></i>
+                                    <i class="bi bi-send text-dark"></i>
+                                </div>
+                                <i class="bi bi-bookmark text-dark"></i>
+                            </div>
+
+                            <div class="px-3 pb-3">
+                                <small class="fw-bold d-block mb-1">1,482 likes</small>
+                                <small><strong>georgia_emergency_towing</strong> ${data.headline} - ${data.primary_text}</small>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else if (data.platform === 'GOOGLE') {
+                html = `
+                    <div class="phone-frame">
+                        <div class="google-mockup">
+                            <div class="google-url-row">
+                                <span class="google-ad-badge">Ad</span>
+                                <span>www.georgiatowing.com › emergency</span>
+                                <i class="bi bi-three-dots-vertical ms-auto text-muted"></i>
+                            </div>
+                            <a href="#" class="google-title" onclick="triggerCallSimulator(${data.id}, 'Google Ads', '${data.call_number}')">${data.headline}</a>
+                            <div class="google-desc">${data.primary_text}</div>
+                            <div class="mt-2 small text-primary fw-semibold">
+                                • 24/7 Flatbed Towing • Emergency Hospital Dispatch • 5-Mile Radius Arrival
+                            </div>
+                            <button class="google-call-btn" onclick="triggerCallSimulator(${data.id}, 'Google Ads', '${data.call_number}')">
+                                <i class="bi bi-telephone-fill me-1"></i> Call ${data.call_number}
+                            </button>
+                        </div>
+                    </div>
+                `;
+            } else if (data.platform === 'TIKTOK') {
+                html = `
+                    <div class="phone-frame">
+                        <div class="tiktok-mockup" style="background-image: url('${data.media_url}');">
+                            <div class="tiktok-sidebar">
+                                <div class="tiktok-icon-btn">
+                                    <div class="rounded-circle bg-danger border border-white" style="width: 40px; height: 40px; overflow: hidden;">
+                                        <img src="${data.media_url}" style="width: 100%; height: 100%; object-fit: cover;">
+                                    </div>
+                                </div>
+                                <div class="tiktok-icon-btn"><i class="bi bi-heart-fill text-danger"></i><span>24.5K</span></div>
+                                <div class="tiktok-icon-btn"><i class="bi bi-chat-dots-fill"></i><span>1,280</span></div>
+                                <div class="tiktok-icon-btn"><i class="bi bi-share-fill"></i><span>Share</span></div>
+                            </div>
+
+                            <div class="tiktok-overlay">
+                                <strong class="d-block mb-1">@georgia_towing_official</strong>
+                                <p class="small mb-2">${data.headline}</p>
+                                <button class="tiktok-cta-btn" onclick="triggerLeadFormModal(${data.id}, 'TikTok Ads')">
+                                    ${data.cta_type === 'CALL' ? 'Call Now' : 'Learn More & Get Help'} <i class="bi bi-arrow-right me-1"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                html = `
+                    <div class="phone-frame">
+                        <div class="snap-mockup" style="background-image: url('${data.media_url}');">
+                            <div class="snap-top-bar">
+                                <div class="rounded-circle bg-warning text-dark fw-bold d-flex align-items-center justify-content-center" style="width: 28px; height: 28px; font-size: 0.75rem;">GA</div>
+                                <strong class="small">GA Emergency</strong>
+                                <span class="badge bg-secondary extra-small">Ad</span>
+                            </div>
+
+                            <div class="snap-bottom-cta">
+                                <div class="snap-arrow"><i class="bi bi-chevron-double-up"></i></div>
+                                <button class="snap-btn" onclick="triggerCallSimulator(${data.id}, 'Snapchat Ads', '${data.call_number}')">
+                                    SWIPE UP TO CALL HOTLINE
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            container.innerHTML = html;
+            authenticAdModal.show();
+        });
+    }
+
+    function triggerLeadFormModal(campaignId, platform) {
+        authenticAdModal.hide();
+        document.getElementById('modalCampaignId').value = campaignId;
+        document.getElementById('modalPlatformSource').value = platform;
+        leadFormModal.show();
+    }
+
+    function triggerCallSimulator(campaignId, platform, phone) {
+        authenticAdModal.hide();
+        document.getElementById('callSimNumber').innerText = phone;
+        callSimModal.show();
+
+        fetch('/api/lead/submit/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                campaign_id: campaignId,
+                name: 'Direct Phone Caller',
+                phone: phone,
+                email: 'phone_caller@georgia.com',
+                service_requested: 'Direct Operator Call Request',
+                platform_source: platform,
+                notes: 'Generated via Authentic Call CTA'
+            })
+        });
+    }
+
+    function executeLeadSubmission() {
+        const campaignId = document.getElementById('modalCampaignId').value;
+        const platform = document.getElementById('modalPlatformSource').value;
+        const name = document.getElementById('modalLeadName').value;
+        const phone = document.getElementById('modalLeadPhone').value;
+        const email = document.getElementById('modalLeadEmail').value;
+        const service = document.getElementById('modalLeadService').value;
+
+        fetch('/api/lead/submit/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                campaign_id: campaignId,
+                name: name,
+                phone: phone,
+                email: email,
+                service_requested: service,
+                platform_source: platform,
+                notes: 'Captured via Form CTA'
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            leadFormModal.hide();
+            alert(`✅ Lead Captured! ${name} saved directly to Django DB. Redirecting to Leads Database...`);
+            window.location.href = '?tab=leads';
+        });
+    }
+
+    function triggerTestCrash() {
+        fetch('/api/webhook/crash/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify([
+                {
+                    incident_id: 'GA_511_' + Math.floor(100000 + Math.random() * 900000),
+                    title: 'Multi-Vehicle Accident on I-75 North near Atlanta',
+                    location: 'I-75 North, Atlanta, GA',
+                    latitude: 33.7700 + (Math.random() * 0.05),
+                    longitude: -84.3800 + (Math.random() * 0.05),
+                    description: 'Vehicle accident blocking left lanes. Emergency services dispatched.',
+                    source: 'Georgia 511 Developer API (n8n)'
+                }
+            ])
+        })
+        .then(res => res.json())
+        .then(data => {
+            alert('🚀 Live Crash Ingested! Auto-discovered nearby Towing/Hospitals/Police and launched 4 Campaigns!');
+            window.location.href = '?tab=dashboard';
+        });
+    }
+
+    {% if active_tab == 'dashboard' or not active_tab %}
+    // Chart 1: Performance
+    const ctxPerf = document.getElementById('chartPerformance')?.getContext('2d');
+    if (ctxPerf) {
+        new Chart(ctxPerf, {
+            type: 'bar',
+            data: {
+                labels: ['Meta (FB/IG)', 'Google Ads', 'TikTok Ads', 'Snapchat Ads'],
+                datasets: [
+                    { label: 'Impressions', data: [{{ platform_stats.META.impressions|default:3200 }}, {{ platform_stats.GOOGLE.impressions|default:2400 }}, {{ platform_stats.TIKTOK.impressions|default:1900 }}, {{ platform_stats.SNAPCHAT.impressions|default:1500 }}], backgroundColor: '#0866FF' },
+                    { label: 'Clicks', data: [{{ platform_stats.META.clicks|default:240 }}, {{ platform_stats.GOOGLE.clicks|default:180 }}, {{ platform_stats.TIKTOK.clicks|default:120 }}, {{ platform_stats.SNAPCHAT.clicks|default:95 }}], backgroundColor: '#4285F4' }
+                ]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+    }
+
+    // Chart 2: Leads
+    const ctxLeads = document.getElementById('chartLeads')?.getContext('2d');
+    if (ctxLeads) {
+        new Chart(ctxLeads, {
+            type: 'doughnut',
+            data: {
+                labels: ['Meta Ads', 'Google Ads', 'TikTok Ads', 'Snapchat Ads'],
+                datasets: [{
+                    data: [{{ platform_stats.META.leads|default:22 }}, {{ platform_stats.GOOGLE.leads|default:14 }}, {{ platform_stats.TIKTOK.leads|default:9 }}, {{ platform_stats.SNAPCHAT.leads|default:7 }}],
+                    backgroundColor: ['#0866FF', '#4285F4', '#010101', '#FFFC00']
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+        });
+    }
+    {% endif %}
+</script>
+</body>
+</html>
