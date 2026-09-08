@@ -7,4 +7,11 @@ urlpatterns = [
     path('api/campaign/create/', views.create_campaign_api, name='create_campaign_api'),
     path('api/campaign/<int:campaign_id>/', views.campaign_detail_api, name='campaign_detail_api'),
     path('api/lead/submit/', views.submit_lead_api, name='submit_lead_api'),
+    path('api/automation/run/', views.run_ad_automation_api, name='run_ad_automation_api'),
+    path('api/ab-test/<int:campaign_id>/', views.ab_test_api, name='ab_test_api'),
+    path('google-ads/', views.google_ads_dashboard_view, name='google_ads_dashboard'),
+    path('api/google-ads/config/', views.google_ads_config_api, name='google_ads_config_api'),
+    path('api/google-ads/gaql/', views.google_ads_gaql_api, name='google_ads_gaql_api'),
+    path('api/google-ads/deploy/<int:campaign_id>/', views.google_ads_deploy_api, name='google_ads_deploy_api'),
+    path('api/google-ads/conversion/<int:lead_id>/', views.google_ads_conversion_api, name='google_ads_conversion_api'),
 ]

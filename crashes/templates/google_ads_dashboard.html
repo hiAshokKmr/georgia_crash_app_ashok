@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Ads API Manager & GAQL Explorer</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --google-blue: #1a73e8;
+            --google-dark: #202124;
+            --sidebar-width: 260px;
+        }
+        body { background-color: #f8f9fa; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        
+        .navbar-google { background-color: white; border-bottom: 1px solid #dadce0; }
+        .google-card { border: 1px solid #dadce0; border-radius: 8px; background: white; box-shadow: 0 1px 3px rgba(60,64,67,0.12); }
+        .gaql-editor { font-family: "Courier New", Courier, monospace; background: #202124; color: #81c995; border-radius: 6px; padding: 12px; font-size: 0.9rem; }
+        
+        .badge-google-api { background: #e8f0fe; color: #1a73e8; border: 1px solid #aecbfa; font-weight: 600; }
+        .rsa-preview { border: 1px solid #dadce0; border-radius: 8px; padding: 16px; background: #fff; text-align: left; }
+    </style>
+</head>
+<body>
+
+<!-- Top Navigation -->
+<nav class="navbar navbar-google navbar-expand-lg px-4 py-3">
+    <div class="container-fluid">
+        <a class="navbar-brand d-flex align-items-center gap-2 fw-bold text-dark" href="/">
+            <i class="bi bi-google text-primary fs-3"></i>
+            <span>Google Ads API Center</span>
+        </a>
+
+        <div class="d-flex align-items-center gap-3 ms-auto">
+            <span class="badge badge-google-api px-3 py-2">
+                <i class="bi bi-shield-check me-1"></i> API v16 Connected · ID: {{ config.customer_id }}
+            </span>
+            <a href="/" class="btn btn-outline-dark btn-sm fw-bold">
+                <i class="bi bi-arrow-left me-1"></i> Back to Georgia Dashboard
+            </a>
+        </div>
+    </div>
+</nav>
+
+<div class="container-fluid py-4 px-4">
+    
+    <!-- Top Header Banner -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="fw-bold text-dark mb-1">Google Ads API v16/v17 Management Console</h4>
+            <p class="text-muted small mb-0">GAQL Search Engine, Responsive Search Ads (RSA) Mutate, Geo Radius Proximity & Offline Lead Conversions</p>
+        </div>
+        <button class="btn btn-primary fw-bold" data-bs-toggle="modal" data-bs-target="#configModal">
+            <i class="bi bi-key-fill me-1"></i> API Developer Credentials
+        </button>
+    </div>
+
+    <!-- Credentials Quick Bar -->
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-md-3">
+            <div class="google-card p-3">
+                <small class="text-muted fw-bold d-block">CUSTOMER ACCOUNT ID</small>
+                <h5 class="fw-bold text-dark my-1">{{ config.customer_id }}</h5>
+                <small class="text-success"><i class="bi bi-check-circle-fill me-1"></i>Active MCC Account</small>
+            </div>
+        </div>
+        <div class="col-12 col-md-3">
+            <div class="google-card p-3">
+                <small class="text-muted fw-bold d-block">DEVELOPER TOKEN</small>
+                <h5 class="fw-bold text-truncate text-primary my-1" title="{{ config.developer_token }}">{{ config.developer_token|truncatechars:18 }}</h5>
+                <small class="text-muted"><i class="bi bi-shield-lock me-1"></i>Approved Standard Access</small>
+            </div>
+        </div>
+        <div class="col-12 col-md-3">
+            <div class="google-card p-3">
+                <small class="text-muted fw-bold d-block">API ENVIRONMENT</small>
+                <h5 class="fw-bold text-warning my-1">{% if config.is_sandbox %}Sandbox / Test Account{% else %}Production Live API{% endif %}</h5>
+                <small class="text-muted"><i class="bi bi-cloud-check me-1"></i>gRPC / REST v16</small>
+            </div>
+        </div>
+        <div class="col-12 col-md-3">
+            <div class="google-card p-3">
+                <small class="text-muted fw-bold d-block">OFFLINE CONVERSIONS</small>
+                <h5 class="fw-bold text-success my-1">Enabled</h5>
+                <small class="text-success"><i class="bi bi-telephone-outbound-fill me-1"></i>GCLID & Call Action Sync</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        
+        <!-- LEFT COLUMN: GAQL CONSOLE -->
+        <div class="col-12 col-lg-7">
+            <div class="google-card p-4 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="fw-bold text-dark mb-0">
+                        <i class="bi bi-terminal-fill text-primary me-2"></i>GAQL (Google Ads Query Language) Interactive Console
+                    </h6>
+                    <span class="badge bg-dark">GoogleAdsService.Search</span>
+                </div>
+
+                <div class="mb-2 d-flex gap-2 flex-wrap">
+                    <button class="btn btn-sm btn-outline-primary" onclick="setGaqlQuery(1)">Preset: Campaign Performance</button>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="setGaqlQuery(2)">Preset: Ad Group & RSA Ads</button>
+                    <button class="btn btn-sm btn-outline-success" onclick="setGaqlQuery(3)">Preset: Geo Target Proximity</button>
+                </div>
+
+                <textarea id="gaqlQueryInput" class="form-control gaql-editor mb-3" rows="4" spellcheck="false">{{ gaql_sample }}</textarea>
+
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <button class="btn btn-primary fw-bold" onclick="runGaqlQuery()">
+                        <i class="bi bi-play-fill me-1"></i> Execute GAQL Search Request
+                    </button>
+                    <small class="text-muted">Protocol: HTTP/2 gRPC API v16</small>
+                </div>
+
+                <div class="border rounded bg-light p-3">
+                    <h6 class="fw-bold small text-muted mb-2">GAQL Search Response (JSON):</h6>
+                    <pre id="gaqlResultContainer" class="bg-dark text-light p-3 rounded mb-0" style="max-height: 320px; overflow-y: auto; font-size: 0.85rem;">{{ gaql_results|json_script:"init-gaql" }}</pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN: CAMPAIGN MUTATE & CONVERSION SYNC -->
+        <div class="col-12 col-lg-5">
+            <div class="google-card p-4 mb-4">
+                <h6 class="fw-bold text-dark mb-3">
+                    <i class="bi bi-cloud-upload-fill text-success me-2"></i>Deploy Campaign to Google Ads API
+                </h6>
+                <p class="small text-muted mb-3">Creates Campaign, AdGroup, Responsive Search Ad, and Proximity Geo-Targeting via `CampaignService.MutateCampaigns`</p>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">Select Local Campaign to Deploy</label>
+                    <select class="form-select form-select-sm" id="deployCampaignSelect">
+                        {% for c in google_campaigns %}
+                        <option value="{{ c.id }}">{{ c.name }} [{{ c.platform }}] - Budget: ${{ c.daily_budget }}/day</option>
+                        {% empty %}
+                        <option value="">No local campaigns found. Create one in dashboard!</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <button class="btn btn-success fw-bold w-100 mb-3" onclick="deployToGoogleAds()">
+                    <i class="bi bi-rocket-takeoff-fill me-1"></i> Mutate & Deploy to Google Ads Account
+                </button>
+
+                <div id="deployResultContainer" class="p-3 bg-light rounded border" style="display: none; font-size: 0.85rem;"></div>
+            </div>
+
+            <!-- RESPONSIVE SEARCH AD PREVIEW -->
+            <div class="google-card p-4">
+                <h6 class="fw-bold text-dark mb-3">
+                    <i class="bi bi-phone text-warning me-2"></i>Google Responsive Search Ad (RSA) Preview
+                </h6>
+                <div class="rsa-preview">
+                    <div class="d-flex align-items-center gap-2 mb-1" style="font-size: 0.85rem;">
+                        <span class="fw-bold border border-dark rounded px-1" style="font-size: 0.75rem;">Ad</span>
+                        <span class="text-dark">www.georgiatowing.com/emergency-dispatch</span>
+                    </div>
+                    <a href="#" class="h6 fw-normal text-primary text-decoration-none d-block mb-1">
+                        Georgia Vehicle Crash Assistance | Fast 24/7 Emergency Towing Arrival
+                    </a>
+                    <p class="small text-secondary mb-2">
+                        Emergency roadside towing, hospital center dispatch, and Georgia State Patrol report support available within 5 miles.
+                    </p>
+                    <div class="d-flex gap-2 mt-2">
+                        <span class="badge bg-light text-dark border"><i class="bi bi-telephone-fill text-primary me-1"></i> +1 (404) 555-TOWS</span>
+                        <span class="badge bg-light text-dark border">📍 Georgia Corridor</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Config Modal -->
+<div class="modal fade" id="configModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="bi bi-key-fill me-2"></i>Google Ads API Credentials Configuration</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="configForm">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Customer ID (MCC Account)</label>
+                        <input type="text" class="form-control" id="cfgCustomerId" value="{{ config.customer_id }}" placeholder="123-456-7890">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Developer Token</label>
+                        <input type="text" class="form-control" id="cfgDevToken" value="{{ config.developer_token }}" placeholder="Dev Token String">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">OAuth2 Client ID</label>
+                        <input type="text" class="form-control" id="cfgClientId" value="{{ config.client_id }}" placeholder="xxxx.apps.googleusercontent.com">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">OAuth2 Client Secret</label>
+                        <input type="password" class="form-control" id="cfgClientSecret" value="{{ config.client_secret }}" placeholder="Client Secret">
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="cfgSandbox" {% if config.is_sandbox %}checked{% endif %}>
+                        <label class="form-check-label fw-bold">Use Sandbox / Test Mode</label>
+                    </div>
+                    <button type="button" class="btn btn-primary w-100 fw-bold" onclick="saveGoogleConfig()">
+                        Save Credentials Configuration
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Show initial GAQL JSON
+    try {
+        const initData = JSON.parse(document.getElementById('init-gaql').textContent);
+        document.getElementById('gaqlResultContainer').textContent = JSON.stringify(initData, null, 2);
+    } catch(e) {}
+
+    function setGaqlQuery(type) {
+        const input = document.getElementById('gaqlQueryInput');
+        if (type === 1) {
+            input.value = "SELECT campaign.id, campaign.name, campaign.status, metrics.impressions, metrics.clicks, metrics.ctr, metrics.cost_micros FROM campaign";
+        } else if (type === 2) {
+            input.value = "SELECT ad_group_ad.ad.id, ad_group_ad.status, metrics.clicks, metrics.conversions FROM ad_group_ad";
+        } else if (type === 3) {
+            input.value = "SELECT geo_target_constant.canonical_name, metrics.impressions FROM geo_target_constant";
+        }
+    }
+
+    function runGaqlQuery() {
+        const query = document.getElementById('gaqlQueryInput').value;
+        const container = document.getElementById('gaqlResultContainer');
+        container.textContent = "Executing GAQL request against Google Ads API v16...";
+
+        fetch('/api/google-ads/gaql/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query: query })
+        })
+        .then(res => res.json())
+        .then(data => {
+            container.textContent = JSON.stringify(data, null, 2);
+        })
+        .catch(err => {
+            container.textContent = "Error executing GAQL: " + err;
+        });
+    }
+
+    function deployToGoogleAds() {
+        const campaignId = document.getElementById('deployCampaignSelect').value;
+        if (!campaignId) return alert('Please select a campaign');
+
+        const container = document.getElementById('deployResultContainer');
+        container.style.display = 'block';
+        container.innerHTML = 'Mutating campaign via Google Ads CampaignService API...';
+
+        fetch(`/api/google-ads/deploy/${campaignId}/`, { method: 'POST' })
+        .then(res => res.json())
+        .then(data => {
+            container.innerHTML = `
+                <div class="text-success fw-bold mb-1"><i class="bi bi-check-circle-fill me-1"></i> ${data.message}</div>
+                <div><strong>Google Campaign ID:</strong> ${data.google_campaign_id}</div>
+                <div><strong>Ad Group ID:</strong> ${data.google_ad_group_id}</div>
+                <div><strong>Proximity Target:</strong> ${data.geo_proximity_targeting.radius_miles} miles around ${data.geo_proximity_targeting.latitude}, ${data.geo_proximity_targeting.longitude}</div>
+            `;
+        })
+        .catch(err => {
+            container.innerHTML = `<span class="text-danger">Error: ${err}</span>`;
+        });
+    }
+
+    function saveGoogleConfig() {
+        fetch('/api/google-ads/config/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                customer_id: document.getElementById('cfgCustomerId').value,
+                developer_token: document.getElementById('cfgDevToken').value,
+                client_id: document.getElementById('cfgClientId').value,
+                client_secret: document.getElementById('cfgClientSecret').value,
+                is_sandbox: document.getElementById('cfgSandbox').checked
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            alert('🎉 Google Ads API Credentials Saved Successfully!');
+            window.location.reload();
+        });
+    }
+</script>
+</body>
+</html>

@@ -61,6 +61,7 @@ class AdCampaign(models.Model):
     form_url = models.URLField(default='http://localhost:8000/lead-form/')
     daily_budget = models.DecimalField(max_digits=10, decimal_places=2, default=50.00)
     target_radius_miles = models.FloatField(default=5.0)
+    ab_test_active = models.BooleanField(default=True)
     impressions = models.IntegerField(default=1250)
     clicks = models.IntegerField(default=84)
     leads_count = models.IntegerField(default=6)
@@ -94,3 +95,42 @@ class Lead(models.Model):
 
     class Meta:
         ordering = ['-created_at']
+
+class AutomationRuleLog(models.Model):
+    rule_name = models.CharField(max_length=255)
+    trigger_reason = models.CharField(max_length=500)
+    action_taken = models.TextField()
+    campaign = models.ForeignKey(AdCampaign, on_delete=models.CASCADE, null=True, blank=True)
+    executed_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Rule: {self.rule_name} - {self.executed_at.strftime('%H:%M:%S')}"
+
+    class Meta:
+        ordering = ['-executed_at']
+
+class GoogleAdsAccountConfig(models.Model):
+    developer_token = models.CharField(max_length=255, default='MOCK_DEV_TOKEN_GA_511_CRASH')
+    client_id = models.CharField(max_length=255, blank=True, default='')
+    client_secret = models.CharField(max_length=255, blank=True, default='')
+    refresh_token = models.CharField(max_length=255, blank=True, default='')
+    customer_id = models.CharField(max_length=100, default='987-654-3210')
+    is_sandbox = models.BooleanField(default=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Google Ads Config (Customer ID: {self.customer_id}) - Sandbox: {self.is_sandbox}"
+
+class GoogleAdsCampaignSync(models.Model):
+    campaign = models.OneToOneField(AdCampaign, on_delete=models.CASCADE, related_name='google_sync')
+    google_campaign_id = models.CharField(max_length=100)
+    google_ad_group_id = models.CharField(max_length=100)
+    bidding_strategy_type = models.CharField(max_length=100, default='MAXIMIZE_CONVERSIONS')
+    target_cpa_amount = models.DecimalField(max_digits=8, decimal_places=2, default=15.00)
+    gaql_last_query = models.TextField(blank=True, default='SELECT campaign.id, metrics.impressions, metrics.clicks FROM campaign')
+    sync_status = models.CharField(max_length=50, default='SYNCED')
+    synced_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Google Ads Sync: Campaign {self.google_campaign_id} ({self.campaign.name})"
+

@@ -3,7 +3,9 @@ import random
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import render, get_object_or_404
-from .models import CrashIncident, NearbyLocation, AdCampaign, Lead
+from .models import CrashIncident, NearbyLocation, AdCampaign, Lead, AutomationRuleLog, GoogleAdsAccountConfig, GoogleAdsCampaignSync
+from .ad_automation import optimize_campaign_budget, generate_ab_test_variations, dispatch_lead_notification
+from .google_ads_api import GoogleAdsAPIManager
 
 @csrf_exempt
 def crash_webhook(request):
@@ -42,8 +44,7 @@ def crash_webhook(request):
             if created:
                 saved_crashes += 1
 
-                # Calculate Geo Offsets (approx 1 mile = 0.0145 degrees lat/lon)
-                # 1. Tow Yard (approx 1.2 miles away)
+                # 1. Tow Yard
                 tow_lat = round(lat + random.uniform(-0.015, 0.015), 6)
                 tow_lon = round(lon + random.uniform(-0.015, 0.015), 6)
                 NearbyLocation.objects.create(
@@ -57,7 +58,7 @@ def crash_webhook(request):
                     address=f"Corridor near {location}"
                 )
 
-                # 2. Nearby Hospital / Emergency Room (approx 2.5 miles away)
+                # 2. Hospital
                 hosp_lat = round(lat + random.uniform(-0.035, 0.035), 6)
                 hosp_lon = round(lon + random.uniform(-0.035, 0.035), 6)
                 NearbyLocation.objects.create(
@@ -71,7 +72,7 @@ def crash_webhook(request):
                     address="Atlanta Metro Health Zone, GA"
                 )
 
-                # 3. Nearby Police Station / Georgia State Patrol Precinct
+                # 3. Police Station
                 police_lat = round(lat + random.uniform(-0.025, 0.025), 6)
                 police_lon = round(lon + random.uniform(-0.025, 0.025), 6)
                 NearbyLocation.objects.create(
@@ -94,7 +95,7 @@ def crash_webhook(request):
                 ]
 
                 for p_code, p_name, headline, media, cta in platforms:
-                    AdCampaign.objects.create(
+                    camp = AdCampaign.objects.create(
                         crash=crash,
                         name=f"{p_name} Campaign - {location}",
                         platform=p_code,
@@ -110,6 +111,9 @@ def crash_webhook(request):
                         status='ACTIVE'
                     )
                     campaigns_created += 1
+
+                    # Trigger Ad Automation Optimization
+                    optimize_campaign_budget(camp)
 
         return JsonResponse({
             'status': 'success',
@@ -210,6 +214,9 @@ def submit_lead_api(request):
             status='NEW'
         )
 
+        # Dispatch real-time lead notification
+        dispatch_lead_notification(lead)
+
         return JsonResponse({
             'status': 'success',
             'message': f'Lead from {name} stored in Django DB!',
@@ -217,6 +224,39 @@ def submit_lead_api(request):
         })
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+@csrf_exempt
+def run_ad_automation_api(request):
+    """ API to trigger automated budget optimizations and rule evaluations """
+    optimized_list = []
+    campaigns = AdCampaign.objects.filter(status='ACTIVE')
+    
+    for c in campaigns:
+        res = optimize_campaign_budget(c)
+        optimized_list.append(res)
+
+        # Log rule execution
+        AutomationRuleLog.objects.create(
+            rule_name="Dynamic Budget & Geofence Optimizer",
+            trigger_reason=f"Periodic Optimization for Campaign #{c.id} ({c.platform})",
+            action_taken=f"Budget adjusted to ${c.daily_budget}/day based on CTR ({res['ctr']}%)",
+            campaign=c
+        )
+
+    return JsonResponse({
+        'status': 'success',
+        'message': f'Ran Ad Automation rules across {len(optimized_list)} campaigns',
+        'results': optimized_list
+    })
+
+def ab_test_api(request, campaign_id):
+    camp = get_object_or_404(AdCampaign, id=campaign_id)
+    variations = generate_ab_test_variations(camp)
+    return JsonResponse({
+        'campaign_id': camp.id,
+        'headline': camp.headline,
+        'variations': variations
+    })
 
 def campaign_detail_api(request, campaign_id):
     camp = get_object_or_404(AdCampaign, id=campaign_id)
@@ -245,6 +285,7 @@ def dashboard_view(request):
     total_campaigns = AdCampaign.objects.count()
     leads = Lead.objects.select_related('campaign').all()[:50]
     total_leads = Lead.objects.count()
+    rule_logs = AutomationRuleLog.objects.all()[:20]
 
     platform_stats = {
         'META': {'impressions': 0, 'clicks': 0, 'leads': 0},
@@ -268,7 +309,92 @@ def dashboard_view(request):
         'total_campaigns': total_campaigns,
         'leads': leads,
         'total_leads': total_leads,
+        'rule_logs': rule_logs,
         'platform_stats': platform_stats,
         'active_tab': active_tab
     }
     return render(request, 'dashboard.html', context)
+
+def google_ads_dashboard_view(request):
+    manager = GoogleAdsAPIManager()
+    config = manager.config
+    google_campaigns = AdCampaign.objects.filter(platform='GOOGLE').select_related('google_sync')
+    gaql_sample = "SELECT campaign.id, campaign.name, campaign.status, metrics.impressions, metrics.clicks, metrics.ctr, metrics.cost_micros FROM campaign"
+    gaql_results = manager.execute_gaql_query(gaql_sample)
+    
+    context = {
+        'config': config,
+        'google_campaigns': google_campaigns,
+        'gaql_sample': gaql_sample,
+        'gaql_results': gaql_results
+    }
+    return render(request, 'google_ads_dashboard.html', context)
+
+@csrf_exempt
+def google_ads_config_api(request):
+    manager = GoogleAdsAPIManager()
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body) if request.body else request.POST
+            config = manager.update_config(
+                dev_token=data.get('developer_token'),
+                customer_id=data.get('customer_id'),
+                is_sandbox=data.get('is_sandbox', True),
+                client_id=data.get('client_id', ''),
+                client_secret=data.get('client_secret', ''),
+                refresh_token=data.get('refresh_token', '')
+            )
+            return JsonResponse({
+                'status': 'success',
+                'message': 'Google Ads API configuration updated successfully!',
+                'customer_id': config.customer_id,
+                'developer_token': config.developer_token,
+                'is_sandbox': config.is_sandbox
+            })
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+    else:
+        return JsonResponse({
+            'customer_id': manager.config.customer_id,
+            'developer_token': manager.config.developer_token,
+            'client_id': manager.config.client_id,
+            'is_sandbox': manager.config.is_sandbox
+        })
+
+@csrf_exempt
+def google_ads_gaql_api(request):
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Only POST allowed'}, status=405)
+    try:
+        data = json.loads(request.body)
+        query = data.get('query', 'SELECT campaign.id, campaign.name FROM campaign')
+        manager = GoogleAdsAPIManager()
+        result = manager.execute_gaql_query(query)
+        return JsonResponse(result)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+@csrf_exempt
+def google_ads_deploy_api(request, campaign_id):
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Only POST allowed'}, status=405)
+    try:
+        camp = get_object_or_404(AdCampaign, id=campaign_id)
+        manager = GoogleAdsAPIManager()
+        res = manager.deploy_to_google_ads(camp)
+        return JsonResponse(res)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+@csrf_exempt
+def google_ads_conversion_api(request, lead_id):
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Only POST allowed'}, status=405)
+    try:
+        lead = get_object_or_404(Lead, id=lead_id)
+        manager = GoogleAdsAPIManager()
+        res = manager.upload_offline_conversion(lead)
+        return JsonResponse(res)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
