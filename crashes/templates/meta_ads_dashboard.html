@@ -11,19 +11,43 @@
     <style>
         :root {
             --meta-blue: #0866FF;
-            --meta-dark: #1877F2;
-            --sidebar-width: 260px;
+            --neon-pink: #ff007f;
+            --bg-gradient: radial-gradient(circle at 20% 20%, #0f172a 0%, #0b0f19 50%, #030712 100%);
+            --glass-bg: rgba(15, 23, 42, 0.75);
+            --glass-border: rgba(255, 255, 255, 0.1);
         }
-        body { background-color: #f0f2f5; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { 
+            background: var(--bg-gradient); 
+            color: #f1f5f9; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            min-height: 100vh;
+        }
         
-        .navbar-meta { background-color: white; border-bottom: 1px solid #e4e6eb; }
-        .meta-card { border: 1px solid #e4e6eb; border-radius: 10px; background: white; box-shadow: 0 1px 2px rgba(0,0,0,0.08); }
-        .json-preview { font-family: "Courier New", Courier, monospace; background: #0f172a; color: #38bdf8; border-radius: 8px; padding: 14px; font-size: 0.85rem; }
+        .navbar-meta { 
+            background: rgba(15, 23, 42, 0.85); 
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--glass-border); 
+        }
+        .meta-card { 
+            border: 1px solid var(--glass-border); 
+            border-radius: 16px; 
+            background: var(--glass-bg); 
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            color: #f1f5f9;
+        }
+        .meta-card:hover {
+            border-color: rgba(8, 102, 255, 0.4);
+            box-shadow: 0 0 20px rgba(8, 102, 255, 0.3);
+        }
+        .json-preview { font-family: "Courier New", Courier, monospace; background: #020617; color: #60a5fa; border-radius: 10px; padding: 14px; font-size: 0.85rem; border: 1px solid var(--glass-border); }
         
-        .badge-meta-api { background: #e7f1ff; color: #0866FF; border: 1px solid #aacdff; font-weight: 600; }
+        .badge-meta-api { background: rgba(8, 102, 255, 0.15); color: #60a5fa; border: 1px solid rgba(8, 102, 255, 0.3); font-weight: 600; }
         
         /* Instagram Feed Card */
-        .ig-feed-card { border: 1px solid #e4e6eb; border-radius: 12px; background: #fff; overflow: hidden; max-width: 380px; margin: 0 auto; }
+        .ig-feed-card { border: 1px solid var(--glass-border); border-radius: 14px; background: #fff; overflow: hidden; max-width: 380px; margin: 0 auto; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .ig-header { padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f0f2f5; }
         .ig-avatar { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); padding: 2px; }
         .ig-avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 2px solid white; }
@@ -35,7 +59,7 @@
 <!-- Top Navigation -->
 <nav class="navbar navbar-meta navbar-expand-lg px-4 py-3">
     <div class="container-fluid">
-        <a class="navbar-brand d-flex align-items-center gap-2 fw-bold text-dark" href="/">
+        <a class="navbar-brand d-flex align-items-center gap-2 fw-bold text-white" href="/">
             <i class="bi bi-facebook text-primary fs-3"></i>
             <span>Meta Marketing API & CAPI Center</span>
         </a>
@@ -44,7 +68,7 @@
             <span class="badge badge-meta-api px-3 py-2">
                 <i class="bi bi-shield-check me-1"></i> Graph API v19.0 · Account: {{ config.ad_account_id }}
             </span>
-            <a href="/" class="btn btn-outline-dark btn-sm fw-bold">
+            <a href="/" class="btn btn-outline-light btn-sm fw-bold">
                 <i class="bi bi-arrow-left me-1"></i> Back to Georgia Dashboard
             </a>
         </div>
