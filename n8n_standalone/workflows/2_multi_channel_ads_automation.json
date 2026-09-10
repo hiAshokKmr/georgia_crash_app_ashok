@@ -1,0 +1,161 @@
+{
+  "name": "2 - Multi-Channel Ads Automation Pipeline (Google, Meta, Snapchat)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "trigger-crash-ads",
+        "options": {
+          "responseCode": 200,
+          "responseData": "{\n  \"status\": \"dispatched\",\n  \"message\": \"Crash ad campaigns triggered across Google, Meta, and Snapchat channels.\"\n}"
+        }
+      },
+      "id": "node-ads-webhook",
+      "name": "Webhook - Trigger Crash Ads",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [
+        180,
+        400
+      ],
+      "webhookId": "trigger-crash-ads"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Prepare geo-radius targeting, emergency copy, and ad payloads for all 3 channels\nconst item = $input.first().json.body || $input.first().json;\n\nconst county = item.county || 'Georgia';\nconst lat = item.latitude || 33.7490;\nconst lng = item.longitude || -84.3880;\nconst incidentId = item.incident_id || ('GA-' + Date.now());\n\nconst headlines = [\n  `Injured in ${county} Crash? Get Legal Help Now`,\n  `Recent Accident in ${county} County? Know Your Rights`,\n  `Georgia Accident Attorneys - 24/7 Rapid Response`\n];\n\nconst adCopy = `Urgent support for victims of the recent accident near ${county}. Free case review, no fees unless you win. Immediate dispatch available.`;\n\nreturn [{\n  json: {\n    incident_id: incidentId,\n    county: county,\n    latitude: lat,\n    longitude: lng,\n    radius_miles: 15,\n    campaign_name: `Rapid_Crash_Response_${county}_${incidentId}`,\n    headline: headlines[0],\n    body_copy: adCopy,\n    call_to_action: 'CALL_NOW',\n    phone_number: '+1-800-555-CRASH',\n    landing_page: `https://yourlawfirm.com/georgia-accidents?incident=${incidentId}`,\n    budget_usd: 50.00\n  }\n}];"
+      },
+      "id": "node-prepare-ad-payload",
+      "name": "Code - Build Geo & Copy Payloads",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        420,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.DJANGO_BACKEND_URL || 'https://your-django-app.vercel.app/api/' }}crashes/ads/google/launch/",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  channel: 'GOOGLE_ADS',\n  campaign_name: $json.campaign_name,\n  headline: $json.headline,\n  geo_target: { lat: $json.latitude, lng: $json.longitude, radius: $json.radius_miles },\n  budget: $json.budget_usd\n}) }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "node-google-ads-dispatch",
+      "name": "Google Ads - Geo Search & Call Surge",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        720,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.DJANGO_BACKEND_URL || 'https://your-django-app.vercel.app/api/' }}crashes/ads/meta/launch/",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  channel: 'META_ADS',\n  campaign_name: $json.campaign_name,\n  headline: $json.headline,\n  copy: $json.body_copy,\n  geo_target: { lat: $json.latitude, lng: $json.longitude, radius: $json.radius_miles },\n  budget: $json.budget_usd\n}) }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "node-meta-ads-dispatch",
+      "name": "Meta Graph API - FB/IG Feed & Stories",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        720,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.DJANGO_BACKEND_URL || 'https://your-django-app.vercel.app/api/' }}crashes/ads/snapchat/launch/",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  channel: 'SNAPCHAT_ADS',\n  campaign_name: $json.campaign_name,\n  headline: $json.headline,\n  geo_target: { lat: $json.latitude, lng: $json.longitude, radius: $json.radius_miles },\n  budget: $json.budget_usd\n}) }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "node-snapchat-ads-dispatch",
+      "name": "Snapchat Ads API - Geo-Fence Blast",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        720,
+        560
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook - Trigger Crash Ads": {
+      "main": [
+        [
+          {
+            "node": "Code - Build Geo & Copy Payloads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Build Geo & Copy Payloads": {
+      "main": [
+        [
+          {
+            "node": "Google Ads - Geo Search & Call Surge",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Meta Graph API - FB/IG Feed & Stories",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Snapchat Ads API - Geo-Fence Blast",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

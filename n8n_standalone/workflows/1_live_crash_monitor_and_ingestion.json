@@ -1,0 +1,200 @@
+{
+  "name": "1 - Georgia Live Crash Monitor & Ingestion Pipeline",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 5
+            }
+          ]
+        }
+      },
+      "id": "node-schedule-trigger",
+      "name": "Schedule - Check Crash Feeds Every 5 Min",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        180,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ingest-live-crash",
+        "options": {
+          "responseCode": 200,
+          "responseData": "{\n  \"status\": \"received\",\n  \"message\": \"Crash incident queued for ingestion & validation\"\n}"
+        }
+      },
+      "id": "node-webhook-trigger",
+      "name": "Webhook - Live Incident Post",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [
+        180,
+        500
+      ],
+      "webhookId": "ingest-live-crash"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Normalizes incoming crash data from Webhook or Scheduled RSS/GDOT feed\nconst items = $input.all();\nconst output = [];\n\nfor (const item of items) {\n  const data = item.json.body || item.json;\n  \n  const title = data.title || data.incident_name || 'Vehicle Crash Incident';\n  const county = data.county || (title.includes('Fulton') ? 'Fulton' : (title.includes('Gwinnett') ? 'Gwinnett' : (title.includes('Cobb') ? 'Cobb' : 'DeKalb')));\n  const latitude = parseFloat(data.latitude || 33.7490);\n  const longitude = parseFloat(data.longitude || -84.3880);\n  const description = data.description || 'Live accident reported on major Georgia corridor.';\n  const isSevere = data.severity === 'FATAL' || data.severity === 'HIGH' || description.toLowerCase().includes('fatality') || description.toLowerCase().includes('lanes blocked') || description.toLowerCase().includes('rollover');\n  \n  output.push({\n    json: {\n      incident_id: data.id || 'GA-' + Date.now() + '-' + Math.floor(Math.random() * 1000),\n      title: title,\n      county: county,\n      latitude: latitude,\n      longitude: longitude,\n      severity: isSevere ? 'HIGH' : 'STANDARD',\n      lanes_blocked: data.lanes_blocked || (isSevere ? 2 : 1),\n      is_urgent: isSevere,\n      timestamp: new Date().toISOString(),\n      trigger_ads: isSevere\n    }\n  });\n}\n\nreturn output;"
+      },
+      "id": "node-parse-incident",
+      "name": "Code - Normalize & Calculate Severity",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.trigger_ads }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "node-filter-severe",
+      "name": "Filter - Is High Priority Crash?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        680,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.DJANGO_BACKEND_URL || 'https://your-django-app.vercel.app/api/' }}crashes/ingest/",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.DJANGO_API_TOKEN || 'demo-token' }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "node-send-to-django",
+      "name": "HTTP - Sync to Django DB",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        940,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.WEBHOOK_URL || 'https://your-n8n-app.onrender.com/' }}webhook/trigger-crash-ads",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "node-trigger-ads-webhook",
+      "name": "HTTP - Trigger Multi-Channel Ads Pipeline",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        940,
+        500
+      ]
+    }
+  ],
+  "connections": {
+    "Schedule - Check Crash Feeds Every 5 Min": {
+      "main": [
+        [
+          {
+            "node": "Code - Normalize & Calculate Severity",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook - Live Incident Post": {
+      "main": [
+        [
+          {
+            "node": "Code - Normalize & Calculate Severity",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Normalize & Calculate Severity": {
+      "main": [
+        [
+          {
+            "node": "Filter - Is High Priority Crash?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter - Is High Priority Crash?": {
+      "main": [
+        [
+          {
+            "node": "HTTP - Sync to Django DB",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP - Trigger Multi-Channel Ads Pipeline",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP - Sync to Django DB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

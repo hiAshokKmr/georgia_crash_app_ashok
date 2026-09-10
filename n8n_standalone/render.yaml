@@ -1,0 +1,34 @@
+services:
+  - type: web
+    name: n8n-georgia-automation
+    env: docker
+    dockerfilePath: Dockerfile
+    plan: free # or starter for 24/7 background tasks with persistent disk
+    region: oregon # or ohio / frankfurt
+    numInstances: 1
+    healthCheckPath: /healthz
+    envVars:
+      - key: N8N_PORT
+        value: 5678
+      - key: PORT
+        value: 5678
+      - key: N8N_PROTOCOL
+        value: https
+      - key: WEBHOOK_URL
+        sync: false # Set to https://<your-render-service-name>.onrender.com/
+      - key: N8N_ENCRYPTION_KEY
+        generateValue: true
+      - key: GENERIC_TIMEZONE
+        value: America/New_York
+      - key: N8N_DEFAULT_BINARY_DATA_MODE
+        value: filesystem
+      - key: EXECUTIONS_DATA_PRUNE
+        value: "true"
+      - key: EXECUTIONS_DATA_MAX_AGE
+        value: "168"
+      - key: DJANGO_BACKEND_URL
+        sync: false
+    disk:
+      name: n8n-data
+      mountPath: /home/node/.n8n
+      sizeGB: 1
