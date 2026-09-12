@@ -52,23 +52,36 @@ TEMPLATES = [
     },
 ]
 
+import dj_database_url
+
 WSGI_APPLICATION = 'config.wsgi.application'
 
-# Support writable SQLite on Vercel's read-only serverless filesystem
-if os.environ.get('VERCEL'):
-    db_path = '/tmp/db.sqlite3'
-else:
-    db_path = BASE_DIR / 'db.sqlite3'
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': db_path,
-        'OPTIONS': {
-            'timeout': 60,
+# Database Configuration (Neon PostgreSQL via DATABASE_URL or SQLite fallback)
+if os.environ.get('DATABASE_URL'):
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=os.environ.get('DATABASE_URL'),
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
+    }
+elif os.environ.get('VERCEL'):
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': '/tmp/db.sqlite3',
+            'OPTIONS': {'timeout': 60}
         }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+            'OPTIONS': {'timeout': 60}
+        }
+    }
+
 
 AUTH_PASSWORD_VALIDATORS = []
 
