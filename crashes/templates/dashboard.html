@@ -363,10 +363,11 @@
                                 </div>
                             </div>
                             <div class="p-3 bg-light border-top">
-                                <button class="btn btn-dark btn-sm w-100 fw-bold" onclick="openAuthenticAdPreview({{ c.id }})">
+                                <button class="btn btn-dark btn-sm w-100 fw-bold" onclick="openAuthenticAdPreview('{{ c.id }}')">
                                     <i class="bi bi-eye-fill me-1"></i> Preview Authentic Platform Ad
                                 </button>
                             </div>
+
                         </div>
                     </div>
                     {% empty %}
@@ -732,9 +733,13 @@
     </div>
 </div>
 
+<!-- Platform Stats Safe JSON Data -->
+{{ platform_stats|json_script:"platformStatsData" }}
+
 <!-- Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+
     const authenticAdModal = new bootstrap.Modal(document.getElementById('authenticAdModal'));
     const leadFormModal = new bootstrap.Modal(document.getElementById('leadFormModal'));
     const callSimModal = new bootstrap.Modal(document.getElementById('callSimModal'));
@@ -991,8 +996,15 @@
         .catch(err => alert('Error generating variations: ' + err));
     }
 
-    {% if active_tab == 'dashboard' or not active_tab %}
-    // Chart 1: Performance
+    // Chart 1: Performance & Chart 2: Leads
+    const statsScript = document.getElementById('platformStatsData');
+    const stats = statsScript ? JSON.parse(statsScript.textContent || '{}') : {};
+
+    const metaStats = stats.META || {};
+    const googleStats = stats.GOOGLE || {};
+    const tiktokStats = stats.TIKTOK || {};
+    const snapStats = stats.SNAPCHAT || {};
+
     const ctxPerf = document.getElementById('chartPerformance')?.getContext('2d');
     if (ctxPerf) {
         new Chart(ctxPerf, {
@@ -1000,8 +1012,28 @@
             data: {
                 labels: ['Meta (FB/IG)', 'Google Ads', 'TikTok Ads', 'Snapchat Ads'],
                 datasets: [
-                    { label: 'Impressions', data: [{{ platform_stats.META.impressions|default:3200 }}, {{ platform_stats.GOOGLE.impressions|default:2400 }}, {{ platform_stats.TIKTOK.impressions|default:1900 }}, {{ platform_stats.SNAPCHAT.impressions|default:1500 }}], backgroundColor: '#00f0ff', borderRadius: 8 },
-                    { label: 'Clicks', data: [{{ platform_stats.META.clicks|default:240 }}, {{ platform_stats.GOOGLE.clicks|default:180 }}, {{ platform_stats.TIKTOK.clicks|default:120 }}, {{ platform_stats.SNAPCHAT.clicks|default:95 }}], backgroundColor: '#ff007f', borderRadius: 8 }
+                    { 
+                        label: 'Impressions', 
+                        data: [
+                            metaStats.impressions || 3200, 
+                            googleStats.impressions || 2400, 
+                            tiktokStats.impressions || 1900, 
+                            snapStats.impressions || 1500
+                        ], 
+                        backgroundColor: '#00f0ff', 
+                        borderRadius: 8 
+                    },
+                    { 
+                        label: 'Clicks', 
+                        data: [
+                            metaStats.clicks || 240, 
+                            googleStats.clicks || 180, 
+                            tiktokStats.clicks || 120, 
+                            snapStats.clicks || 95
+                        ], 
+                        backgroundColor: '#ff007f', 
+                        borderRadius: 8 
+                    }
                 ]
             },
             options: { 
@@ -1016,7 +1048,6 @@
         });
     }
 
-    // Chart 2: Leads
     const ctxLeads = document.getElementById('chartLeads')?.getContext('2d');
     if (ctxLeads) {
         new Chart(ctxLeads, {
@@ -1024,7 +1055,12 @@
             data: {
                 labels: ['Meta Ads', 'Google Ads', 'TikTok Ads', 'Snapchat Ads'],
                 datasets: [{
-                    data: [{{ platform_stats.META.leads|default:22 }}, {{ platform_stats.GOOGLE.leads|default:14 }}, {{ platform_stats.TIKTOK.leads|default:9 }}, {{ platform_stats.SNAPCHAT.leads|default:7 }}],
+                    data: [
+                        metaStats.leads || 22, 
+                        googleStats.leads || 14, 
+                        tiktokStats.leads || 9, 
+                        snapStats.leads || 7
+                    ],
                     backgroundColor: ['#00f0ff', '#8b5cf6', '#ff007f', '#ffb703'],
                     borderWidth: 2,
                     borderColor: '#0f172a'
@@ -1037,7 +1073,7 @@
             }
         });
     }
-    {% endif %}
 </script>
 </body>
 </html>
+
